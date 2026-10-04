@@ -25,6 +25,3 @@ def offline_env():
     engine = MemoryEngine(embedder=embedder, clock=lambda: date(2026, 9, 1))
     configure(embedder=embedder, kb=kb, memory=engine)
     return embedder, kb, engine
-
-
-OFFLINE_TODAY = date(2026, 9, 1)

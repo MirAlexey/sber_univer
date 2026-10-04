@@ -1,23 +1,21 @@
 """Плотный (семантический) поиск на эмбеддингах.
 
-Индекс строится поверх произвольного эмбеддера, соответствующего протоколу
-Embedder (src/llm.py): в бою это GigaChatEmbeddings, в офлайн-тестах -
-HashEmbedder. Сам индекс — простая матрица нормализованных векторов NumPy с
-косинусной близостью, без внешней векторной БД (для каркаса этого достаточно,
-переключение на Qdrant описано в README).
+Индекс строится поверх эмбеддера с методом embed(text): в бою это
+GigaChatEmbedder (обёртка над GigaChatEmbeddings), в офлайн-тестах — HashEmbedder.
+Индекс — матрица нормализованных векторов NumPy с косинусной близостью, без
+внешней векторной БД.
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from src.llm import Embedder
 
 
 class DenseIndex:
     """Матрица эмбеддингов с косинусным поиском по запросу."""
 
-    def __init__(self, embedder: Embedder):
+    def __init__(self, embedder):
         self.embedder = embedder
         self._matrix: np.ndarray | None = None
         self._dim = 0

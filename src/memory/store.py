@@ -6,7 +6,8 @@
 - удаление по запросу с сохранением сведений, которые обязаны храниться
   (mandatory -> маскирование значения, а не физическое стирание);
 - поиск по памяти с учётом и смысловой близости, и свежести записи
-  (recency-взвешивание).
+  (recency-взвешивание);
+- снимок в JSON между перезапусками (snapshot_path).
 """
 
 from __future__ import annotations
@@ -25,9 +26,6 @@ from src.memory.schema import (
     SRC_LABEL,
     make_expiry,
 )
-
-DEDUP_THRESHOLD = 0.965  # равенство строк/значений, при котором это тот же факт
-SEMANTIC_WINDOW = 8192
 
 
 class ConflictVerdict:
@@ -57,7 +55,6 @@ class MemoryEngine:
         import os
         if not os.path.exists(self.snapshot_path):
             return
-        from src.memory.schema import MemoryKind
         with open(self.snapshot_path, encoding="utf-8") as fh:
             data = json.load(fh)
         for rd in data.get("records", []):
@@ -133,10 +130,10 @@ class MemoryEngine:
             ticket_id=ticket_id,
         )
         with self._lock:
-            existing = self._records.get(incoming_key := self._key(client_id, kind, attr))
+            existing = self._records.get(self._key(client_id, kind, attr))
             if existing is None:
                 record = incoming
-                self._records[incoming_key] = record
+                self._records[self._key(client_id, kind, attr)] = record
                 op = ConflictVerdict.ADD
                 why = f"новая запись {kind.value}/{attr}"
             elif _soft_equal(existing.value, incoming.value):
@@ -146,15 +143,13 @@ class MemoryEngine:
                 op = ConflictVerdict.REFRESH
                 why = "значение не изменилось, освежили"
             elif _hard_value_diff(existing.value, incoming.value):
-                # истинное противоречие: решает иерархия доверия
                 inc_trust = TRUST_ORDER.get(source, 0)
                 cur_trust = TRUST_ORDER.get(existing.source, 0)
                 if inc_trust < cur_trust:
                     record = existing
                     op = ConflictVerdict.REJECT
-                    why = f"доверие {SRC_LABEL.get(source, source)} < текущего {SRC_LABEL.get(existing.source, existing.source)}"
+                    why = f"доверие {SRC_LABEL.get(source, source)} ниже текущего {SRC_LABEL.get(existing.source, existing.source)}"
                 else:
-                    # равное или большее доверие: побеждает более свежее свидетельство
                     _replace_value(existing, incoming, mandatory)
                     record = existing
                     op = ConflictVerdict.UPDATE
@@ -163,7 +158,7 @@ class MemoryEngine:
                 existing.observed_at = incoming.observed_at
                 record = existing
                 op = ConflictVerdict.REFRESH
-                why = "похожее значение, счетчик освежения"
+                why = "похожее значение, обновили счётчик"
             if record.expires_at is None:
                 record.expires_at = make_expiry(kind, today)
         self._audit(op, record, actor=actor, reason=why or reason, extra={"source": source, "confidence": confidence})
@@ -242,11 +237,7 @@ def _hard_value_diff(a, b) -> bool:
 
 
 def _close_strings(a: str, b: str) -> bool:
-    """Значения считаются одной записью, если одно содержится в другом (без учёта регистра).
-
-    Строгое правило: незначительные переформулировки (например, разная пунктуация)
-    считаются тем же фактом, а действительно разные значения (Pro vs Start) — конфликтом.
-    """
+    """Значения считаются одной записью, если одно содержится в другом (без учёта регистра)."""
     aa = a.lower().strip()
     bb = b.lower().strip()
     if aa == bb:

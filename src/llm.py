@@ -1,16 +1,15 @@
 """Интерфейсы модели: чат-модель и эмбеддер.
 
 Основной путь — langchain-gigachat напрямую (как в ноутбуках занятий 6-7):
-ChatGigaChat + GigaChatEmbeddings. Библиотека импортируется лениво, чтобы тесты
+GigaChat + GigaChatEmbeddings. Библиотека импортируется лениво, чтобы тесты
 без сети и без ключей могли работать на дублях из tests/fakes.py.
 """
 
 from __future__ import annotations
 
 import hashlib
-from typing import Protocol
 
-from src.models import SlotUpdate, slot_policies
+from src.models import SlotUpdate
 
 
 # ---------------------------------------------------------------------------
@@ -30,7 +29,7 @@ def _gigachat_env() -> dict:
 def get_chat_llm(**overrides):
     """Живой ChatGigaChat. TypeError без установленного пакета или без ключа."""
     try:
-        from langchain_gigachat.chat_models import ChatGigaChat
+        from langchain_gigachat import GigaChat as ChatGigaChat
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("Установите langchain-gigachat (uv sync включает только обязательное)") from exc
     cfg = {**_gigachat_env(), "temperature": 0.0, **overrides}
@@ -49,19 +48,10 @@ def build_extractor(llm):
 # Эмбеддеры
 # ---------------------------------------------------------------------------
 
-class Embedder(Protocol):
-    def embed(self, text: str) -> list[float]: ...
-
-    def embed_many(self, texts: list[str]) -> list[list[float]]: ...
 
 
 class HashEmbedder:
-    """Определённый офлайн-эмбеддер для тестов и каркаса.
-
-    Хэширует признаки слов в плотный вектор (Bag-of-Words + sign hashing +
-    TF-нормировка). Смысловая близость тут грубая, зато поведение
-    детерминировано и не требует сети.
-    """
+    """Офлайн-эмбеддер (Bag-of-Words + sign hashing): для тестов и без сети."""
 
     def __init__(self, dim: int = 960, norm: bool = True):
         self.dim = dim
@@ -91,54 +81,48 @@ class HashEmbedder:
     def embed(self, text: str) -> list[float]:
         return self._normalize(self._featurize(text))
 
-    def embed_many(self, texts: list[str]) -> list[list[float]]:
-        return [self.embed(t) for t in texts]
+
+class GigaChatEmbedder:
+    """Живой эмбеддер: оборачивает GigaChatEmbeddings под единый метод embed()."""
+
+    def __init__(self, raw):
+        self._raw = raw
+
+    def embed(self, text: str) -> list[float]:
+        return [float(x) for x in self._raw.embed_query(text)]
 
 
 def get_embeddings(force_hash: bool = False):
-    """Эмбеддер: живой GigaChatEmbeddings или офлайн HashEmbedder.
+    """Эмбеддер живого режима (GigaChat) или офлайн-заменитель (HashEmbedder).
 
-    hash_now указывается, когда эмбеддер должен работать без сети
-    (тесты/скринкаст без ключей).
+    force_hash=True либо USE_HASH_EMBEDDER=1 возвращают офлайн-эмбеддер (тесты,
+    демо без сети). В живом режиме имя модели опускается, если EMBED_MODEL пуст
+    или равен "EmbeddingsGigaChat" — этот идентификатор сервер отклоняет (404).
     """
     import os
-    if force_hash or not os.environ.get("GIGACHAT_CREDENTIALS"):
+    if force_hash or os.environ.get("USE_HASH_EMBEDDER", "") == "1":
         return HashEmbedder()
-    try:
-        from langchain_gigachat import GigaChatEmbeddings
-    except ImportError:  # pragma: no cover
-        return HashEmbedder()
-    return GigaChatEmbeddings(
-        model=os.environ.get("EMBED_MODEL", "EmbeddingsGigaChat"),
-        **_gigachat_env(),
-    )
+    from langchain_gigachat import GigaChatEmbeddings
+    cfg = _gigachat_env()
+    model = os.environ.get("EMBED_MODEL", "")
+    if model and model != "EmbeddingsGigaChat":
+        cfg["model"] = model
+    return GigaChatEmbedder(GigaChatEmbeddings(**cfg))
 
-
-# ---------------------------------------------------------------------------
-# Промпты, общие для узлов графа
-# ---------------------------------------------------------------------------
 
 SYSTEM_GUIDE = """\
-You are a customer support assistant for the DevCloud development platform.
+Ты — ассистент поддержки платформы разработки DevCloud.
 
-Rules:
-- Collect the user's requisites progressively from the conversation. New
-  information replaces old guesses; conflicting statements are resolved towards
-  the most recent user utterance.
-- Before answering a factual question, you MUST call search_knowledge and answer
-  STRICTLY from its returned passages.
-- Every factual answer MUST end with inline source references in square
-  brackets using the returned form, e.g. [06-Т v2].
-- If the retrieved passage covers a different time period than the user asks
-  about, say so and pick the passage whose period fits the requested moment.
-- Small talk is fine, but never invent numbers or conditions from memory.
+Правила:
+- Собирай реквизиты пользователя постепенно из диалога. Новые сведения
+  заменяют прежние предположения; противоречия разрешай в пользу наиболее
+  свежей реплики пользователя.
+- Прежде чем отвечать на фактический вопрос, ОБЯЗАТЕЛЬНО вызови search_knowledge
+  и отвечай строго по его результатам.
+- Каждый фактический ответ ОБЯЗАН завершаться ссылкой на источник в квадратных
+  скобках в форме из выдачи, например [06-Т v2].
+- Если найденный пассаж покрывает другой период, чем спрашивает пользователь,
+  скажи об этом и выбери пассаж, чей период соответствует нужному моменту.
+- Короткая светская беседа допустима, но никогда не выдумывай цифры и условия
+  по памяти.
 """
-
-
-def extractor_fields_description() -> str:
-    items = [f"- {pol.name}: {pol.label}" for pol in slot_policies().values()]
-    return "Known slots to update this turn:\n" + "\n".join(items)
-
-
-def profile_block_label(kind: str) -> str:
-    return f"known user facts ({kind}):"

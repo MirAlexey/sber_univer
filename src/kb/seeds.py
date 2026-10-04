@@ -222,14 +222,6 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-DEMO_QUERY_TARIF_LIMIT = "какой лимит параллельных воркеров был у тарифа Start?"
-DEMO_QUERY_NUM = "покажи документ 06-Т"
-DEMO_QUERY_REPORTS = "когда выгружается ночной отчёт по проекту?"
-DEMO_QUERY_NOTIFY = "через какой smtp-релей идут уведомления?"
-
-AS_OF_DECEMBER = "2025-12-05"
-AS_OF_JUNE = "2026-06-10"
-
 # ---- расширенная БЗ: сводные правила, API, инциденты, окна, безопасность, биллинг ----
 
 register_seed(KnowledgeDoc(
@@ -380,5 +372,8 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-DEMO_QUERY_API_RATE = "какие лимиты API-запросов у тарифа Pro?"
-DEMO_QUERY_INCIDENT = "за какое время вы реагируете на критический инцидент?"
+DEMO_QUERY_TARIF_LIMIT = "какой лимит параллельных воркеров был у тарифа Start?"
+DEMO_QUERY_NUM = "покажи документ 06-Т"
+
+AS_OF_DECEMBER = "2025-12-05"
+AS_OF_JUNE = "2026-06-10"

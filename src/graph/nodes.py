@@ -46,8 +46,8 @@ async def extract_slots(state: dict) -> dict:
     upd = await extractor.ainvoke([
         SystemMessage(
             content=(
-                "Return only the slots learned from THIS user message; untouched "
-                "fields must be null. Known slots: "
+                "Верни только те слоты, которые узнал из ЭТОГО сообщения пользователя; "
+                "незатронутые поля должны быть null. Известные слоты: "
                 + ", ".join(pol.name for pol in slot_policies().values())
             )
         ),
@@ -112,9 +112,9 @@ async def respond(state: dict) -> dict:
     summary = state.get("summary") or ""
     sys_blocks = [SYSTEM_GUIDE]
     if profile:
-        sys_blocks.append("Long-term user profile (use only if relevant):\n" + profile)
+        sys_blocks.append("Долговременный профиль пользователя (используй, только если относится к делу):\n" + profile)
     if summary:
-        sys_blocks.append("Summarised earlier history:\n" + summary)
+        sys_blocks.append("Ранее свёрнутая история:\n" + summary)
     system_prompt = "\n\n".join(sys_blocks)
 
     history = state.get("messages") or []

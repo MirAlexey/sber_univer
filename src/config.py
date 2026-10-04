@@ -23,7 +23,6 @@ class Settings:
     memory_budget_tokens: int = int(os.environ.get("MEMORY_BUDGET_TOKENS", "700"))
     dialog_budget_tokens: int = int(os.environ.get("DIALOG_BUDGET_TOKENS", "3200"))
     recall_top_k: int = int(os.environ.get("RECALL_TOP_K", "4"))
-    consolidate_min_age_days: int = int(os.environ.get("CONSOLIDATE_MIN_AGE_DAYS", "1"))
     memory_file: str = os.environ.get("MEMORY_FILE", "")
 
 
@@ -40,8 +39,7 @@ class Deps:
     kb: object = None             # src.rag.service.HybridSearch
     memory: object = None         # src.memory.store.MemoryEngine
     store: object = None          # langgraph InMemoryStore (долговременная память)
-    budget: object = None         # src.context.ContextBudget
-    tracer: object = None         # src.observability.Tracer
+    budget: object = None         # src.context.RollingSummaryPipeline
 
     def reset(self) -> None:
         for name in list(self.__dict__.keys()):
@@ -50,11 +48,10 @@ class Deps:
 
 
 deps = Deps()
-_lock_obj = object()
 
 
 def configure(*, llm=None, extractor=None, embedder=None, kb=None, memory=None,
-              store=None, budget=None, tracer=None) -> None:
+              store=None, budget=None) -> None:
     """Пересобирает зависимости. Вызывается один раз при старте приложения."""
     if llm is not None:
         deps.llm = llm
@@ -70,11 +67,6 @@ def configure(*, llm=None, extractor=None, embedder=None, kb=None, memory=None,
         deps.store = store
     if budget is not None:
         deps.budget = budget
-    if tracer is not None:
-        deps.tracer = tracer
-    # держим ссылку, чтобы сборка могла её проверить; используется редко
-    global _lock_obj
-    _lock_obj = object()
 
 
 def reset_defaults() -> None:

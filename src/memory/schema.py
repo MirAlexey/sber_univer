@@ -30,15 +30,6 @@ RETENTION_DAYS: dict[MemoryKind, int | None] = {
     MemoryKind.PROFILE_SUMMARY: None,
 }
 
-HORIZON_LABELS: dict[MemoryKind, str] = {
-    MemoryKind.FACT: "2 года",
-    MemoryKind.PRODUCT: "~1.5 года",
-    MemoryKind.PREFERENCE: "2 года",
-    MemoryKind.EPISODE: "~1.5 года",
-    MemoryKind.PROFILE_SUMMARY: "бессрочно",
-}
-
-
 # Источники: чем ниже — тем менее надёжно. Правила разрешения противоречий
 # опираются на эту иерархию.
 class Source:

@@ -19,7 +19,7 @@ from langgraph.graph.message import add_messages
 from langgraph.store.memory import InMemoryStore
 from typing_extensions import TypedDict
 
-from src.config import deps, reset_defaults, SETTINGS
+from src.config import deps, SETTINGS
 from src.context import RollingSummaryPipeline, default_summarizer
 from src.kb.catalog import catalog_registry
 from src.llm import build_extractor, get_chat_llm, get_embeddings
@@ -122,18 +122,3 @@ def run_config(thread_id: str, user_id: str = "anonymous", callbacks: Optional[l
     if callbacks:
         cfg["callbacks"] = callbacks
     return cfg
-
-
-def assert_cited(answer: str) -> list[str]:
-    """Проверка критерия 'ответ ссылается на источник': ищет [NN-Б vN]-теги."""
-    from src.graph.nodes import _tags_in
-
-    tags = [t for t in _tags_in(answer) if " v" in t]
-    if not tags:
-        raise AssertionError("В ответе нет ссылки на источник [NN-Б vN]")
-    return tags
-
-
-def offline_reset() -> None:
-    """Сброс реестра (для тестов)."""
-    reset_defaults()
