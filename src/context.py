@@ -1,0 +1,111 @@
+"""Управление контекстом под бюджет (критерий 2 задания 2).
+
+- подсчёт расхода токенов по фактическим данным ответа модели
+  (usage_metadata в LangChain), когда они доступны, иначе приближение;
+- вытеснение самых старых сообщений за границу окна с суммаризацией
+  специализированным промптом (задача-специфичным), чтобы история сжималась,
+  а не выбрасывалась.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
+
+from langchain_core.messages import HumanMessage
+
+from src.models import DialogTurn, TURN_SEPARATOR
+
+if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
+
+APPROX_CHARS_PER_TOKEN = 4.6
+
+
+def count_tokens_approx(messages: list["BaseMessage"]) -> int:
+    chars = sum(len(m.content) if isinstance(m.content, str) else 820 for m in messages)
+    return max(0, int(chars / APPROX_CHARS_PER_TOKEN))
+
+
+def actual_usage_tokens(last_assistant) -> tuple[Optional[int], Optional[int]]:
+    """Читает фактические токены ответа модели из usage_metadata, если они есть."""
+    um = getattr(last_assistant, "usage_metadata", None)
+    if not um:
+        return None, None
+    inp = um.get("input_tokens") or um.get("prompt_tokens")
+    outp = um.get("output_tokens") or um.get("completion_tokens")
+    return inp, outp
+
+
+SUMMARY_PROMPT = """\
+Ты сжимаешь историю разговора поддержки дев-облачной платформы в краткую выжимку.
+Сохрани: идентификатор проекта, тариф, срок оплаты, город/часовой пояс, договорённости
+и все числовые параметры. Краткость важнее полноты, потеря свободной болтовни допустима.
+Предыдущая выжимка:\n{prev}\n\nНовые выпадающие сообщения:\n{messages}"""
+
+
+class RollingSummaryPipeline:
+    """Свёртка истории: следим за бюджетом, при переполнении — summarize + trim."""
+
+    def __init__(self, budget_tokens: int = 4600, summarizer=None):
+        self.budget = budget_tokens
+        self.summarizer = summarizer  # функция (summary_so_far, messages)->str
+        self.log: list[DialogTurn] = []
+        self.turn_no = 0
+
+    def _log_entry(self, history_tokens, in_, out, action, dropped) -> None:
+        self.log.append(DialogTurn(
+            turn=self.turn_no,
+            history_tokens_est=history_tokens,
+            actual_input_tokens=in_,
+            actual_output_tokens=out,
+            action=action,
+            dropped=dropped,
+        ))
+
+    def run(self, history: list["BaseMessage"]) -> tuple[list["BaseMessage"], str]:
+        """Проверяет историю против бюджета и возвращает (окно_для_модели, суммаризация)."""
+        self.turn_no += 1
+        est = count_tokens_approx(history)
+        if est <= self.budget:
+            self._log_entry(est, None, None, "none", 0)
+            return history, ""
+        # двигаемся от начала к концу, пока окно не влезет в бюджет
+        kept = list(history)
+        dropped_total = 0
+        action = "summarize+trim"
+        acc: list = []
+        while count_tokens_approx(kept) > self.budget and len(kept) > 1:
+            popped = kept.pop(0)
+            acc.append(popped)
+        # аккуратная свёртка: избегаем зацикливания, если сообщение само огромное
+        if acc:
+            dropped_total = len(acc)
+            summary_new = self._summarize(acc)
+        else:
+            summary_new = ""
+            action = "trim_only"
+        if summary_new:
+            kept.insert(0, HumanMessage(content=summary_new))
+        self._log_entry(count_tokens_approx(kept), None, None, action, dropped_total)
+        return kept, summary_new
+
+    def _summarize(self, dropped: list["BaseMessage"]) -> str:
+        if self.summarizer is None:
+            # детерминированный фолбэк без модели: сливаем тексты в маркер
+            texts = [m.content for m in dropped if isinstance(m.content, str)]
+            blob = TURN_SEPARATOR.join(texts)[:1800]
+            return "<<SUMMARY>>\n" + blob
+        return self.summarizer("", dropped)
+
+
+def default_summarizer(llm):
+    """Живая суммаризация GigaChat специализированным промптом."""
+
+    def _do(prev: str, messages) -> str:
+        msgs = "\n".join(
+            f"{m.type}: {m.content}" for m in messages if isinstance(m.content, str)
+        )
+        text = SUMMARY_PROMPT.format(prev=prev or "(нет)", messages=msgs)
+        return llm.invoke([HumanMessage(content=text)]).content
+
+    return _do

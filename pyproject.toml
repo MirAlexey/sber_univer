@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dialog-agent-memory-hybrid"
+version = "0.1.0"
+description = "Диалоговый агент с памятью и гибридным поиском (задание 2, GigaChat + LangGraph)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=1.0",
+    "langchain-core>=1.0",
+    "langchain>=1.0",
+    "pydantic>=2.10",
+    "numpy>=2.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+gigachat = [
+    "langchain-gigachat>=0.5",
+]
+rerank = [
+    "sentence-transformers>=3.0",
+]
+bm25 = [
+    "bm25s>=0.2",
+]
+test = [
+    "pytest>=8.3",
+    "pytest-asyncio>=1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=1.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
+markers = ["online: тест обращается к настоящему GigaChat"]
+addopts = "-m 'not online'"
