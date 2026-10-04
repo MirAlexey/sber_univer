@@ -1,9 +1,4 @@
-"""Конфигурация и точка сборки объектов окружения (singleton реестр).
-
-Singleton-реестр повторяет подход шаблона задания 3 (global провайдеры в
-src/providers.py): код агента не знает, кто стоит за интерфейсом, а тесты
-переставляют объекты через reset_defaults().
-"""
+"""Настройки проекта и общий реестр зависимостей."""
 
 from __future__ import annotations
 
@@ -42,6 +37,7 @@ class Deps:
     budget: object = None         # src.context.RollingSummaryPipeline
 
     def reset(self) -> None:
+        """Обнуляет все поля реестра."""
         for name in list(self.__dict__.keys()):
             if name != "_lock":
                 self.__dict__[name] = None
@@ -50,8 +46,16 @@ class Deps:
 deps = Deps()
 
 
-def configure(*, llm=None, extractor=None, embedder=None, kb=None, memory=None,
-              store=None, budget=None) -> None:
+def configure(
+    *,
+    llm=None,
+    extractor=None,
+    embedder=None,
+    kb=None,
+    memory=None,
+    store=None,
+    budget=None,
+) -> None:
     """Пересобирает зависимости. Вызывается один раз при старте приложения."""
     if llm is not None:
         deps.llm = llm

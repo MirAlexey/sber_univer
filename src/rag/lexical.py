@@ -1,10 +1,4 @@
-"""Лексический поиск: Okapi BM25 плюс усиление точных идентификаторов.
-
-Нужен для критерия 3 "по точным идентификаторам": служебные номера документов
-вроде 06-Т почти не имеют семантики для эмбеддера, зато ловится токеном/подстрокой
-в BM25. Базовая реализация выполнена в духе компактной Okapi BM25 из занятия 7
-(без тяжёлых зависимостей); при наличии bm25s её можно заменить (см. README).
-"""
+"""Лексический поиск: BM25 и поиск по номеру документа."""
 
 from __future__ import annotations
 
@@ -15,17 +9,19 @@ _TOKEN_RE = re.compile(r"[a-zа-я0-9][a-zа-я0-9_-]*", re.IGNORECASE)
 
 _STOPWORDS = frozenset(
     """и в во не что он на я с со как а то все она так его но да ты к у же вы за бы по только
-       ее мне было вот от меня еще нет о из ему теперь когда даже ну вдруг ли если уже или ни
-       быть был него до вас нибудь уж это ваш для себя бы""".split()
+ее мне было вот от меня еще нет о из ему теперь когда даже ну вдруг ли если уже или ни
+быть был него до вас нибудь уж это ваш для себя бы""".split()
 )
 
 
 def tokenize(text: str) -> list[str]:
+    """Разбивает текст на токены в нижнем регистре и убирает стоп-слова."""
     tokens = [t.lower() for t in _TOKEN_RE.findall(text)]
     return [t for t in tokens if t not in _STOPWORDS and len(t) > 1]
 
 
 def _norm_doc_num(num: str) -> str:
+    """Нормализует служебный номер документа."""
     return num.replace(" ", "").lower()
 
 
@@ -33,6 +29,7 @@ class BM25Index:
     """Компактная Okapi BM25. corpus_item: список строк (склеены на этапе подготовки)."""
 
     def __init__(self, docs: list[str], k1: float = 1.5, b: float = 0.625, epsilon: float = 0.5714):
+        """Считает частоты, длины и IDF по корпусу документов."""
         self.k1 = k1
         self.b = b
         self.epsilon = epsilon
@@ -63,6 +60,7 @@ class BM25Index:
         self.average_idf = idf_sum / max(len(df), 1)
 
     def score_one(self, query_tokens: list[str], i: int) -> float:
+        """BM25-оценка одного документа по токенам запроса."""
         if not query_tokens:
             return 0.0
         fd = self.docs_freq[i]
@@ -76,6 +74,7 @@ class BM25Index:
         return score
 
     def search(self, query: str, k: int = 10) -> list[tuple[int, float]]:
+        """Топ-k документов с ненулевой оценкой BM25."""
         qt = tokenize(query)
         scored = [(i, self.score_one(qt, i)) for i in range(self.n_docs)]
         scored.sort(key=lambda p: p[1], reverse=True)

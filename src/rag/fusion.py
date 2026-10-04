@@ -1,11 +1,4 @@
-"""Слияние двух выдач (RRF) и переупорядочивание кандидатов (реранк).
-
-Переносит алгоритмы занятия 7: взвешенный Reciprocal Rank Fusion и последнюю
-ступень cross-encoder'ом. Cross-encoder подключается лениво — если
-sentence-transformers не установлен, работает нейтральный реранкер, который
-просто сохраняет порядок RRF (каркас обязан запускаться одной командой без
-больших моделей).
-"""
+"""Слияние выдач (RRF) и пересортировка кандидатов."""
 
 from __future__ import annotations
 
@@ -33,11 +26,12 @@ def reciprocal_rank_fusion(
 
 
 class IdentityReranker:
-    """Ничего не делает: сохраняет порядок после RRF. Заглушка на время без сети."""
+    """Реранкер-заглушка: сохраняет порядок после RRF."""
 
     available = False
 
     def rerank(self, query: str, pairs: list[tuple[str, str]]) -> list[float]:
+        """Возвращает оценки, не меняющие порядок кандидатов."""
         n = len(pairs)
         return [float(n - i) for i in range(n)]
 
@@ -46,6 +40,7 @@ class CrossEncoderReranker:
     """Последняя ступень гибридного поиска (кросс-энкодер)."""
 
     def __init__(self, model_name: str = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"):
+        """Загружает модель cross-encoder; при неудаче честно деградирует."""
         try:
             from sentence_transformers import CrossEncoder
 
@@ -56,15 +51,18 @@ class CrossEncoderReranker:
 
     @property
     def available(self) -> bool:
+        """Есть ли рабочая модель cross-encoder."""
         return self._ce is not None
 
     def rerank(self, query: str, pairs: list[tuple[str, str]]) -> list[float]:
+        """Переоценивает пары (запрос, документ) и возвращает баллы."""
         if self._ce is None:
             return list(range(len(pairs), 0, -1))  # порядок как был
         return [float(s) for s in self._ce.predict([[q, d] for q, d in pairs])]
 
 
 def get_reranker(prefer_cross_encoder: bool = True) -> IdentityReranker | CrossEncoderReranker:
+    """Выбирает реранкер: cross-encoder, если доступен, иначе заглушку."""
     """Фабрика реранкера: cross-encoder при возможности, иначе identity."""
     if prefer_cross_encoder:
         ce = CrossEncoderReranker()

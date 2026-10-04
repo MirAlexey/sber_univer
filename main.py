@@ -20,6 +20,7 @@ USER_ID = os.environ.get("DEMO_USER_ID", "client-001")
 
 
 def _pretty(obj: dict) -> str:
+    """Аккуратно печатает словарь для артефакта сессии."""
     return json.dumps(obj, ensure_ascii=False, indent=2, default=str)
 
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Демо памяти: сессии, конфликт, удаление, аудит, консолидация."""
+
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """Критерии 5-6: долговременная память по образцу сценариев dialogs.jsonl.
@@ -17,6 +19,7 @@ from src.memory.store import MemoryEngine
 
 
 def main():
+    """Демонстрирует память: сессии, конфликт, удаление, аудит, консолидацию."""
     embedder = HashEmbedder()
     engine = MemoryEngine(embedder=embedder, clock=lambda: date.fromisoformat("2026-09-01"))
 

@@ -1,11 +1,4 @@
-"""Управление контекстом под бюджет (критерий 2 задания 2).
-
-- подсчёт расхода токенов по фактическим данным ответа модели
-  (usage_metadata в LangChain), когда они доступны, иначе приближение;
-- вытеснение самых старых сообщений за границу окна с суммаризацией
-  специализированным промптом (задача-специфичным), чтобы история сжималась,
-  а не выбрасывалась.
-"""
+"""Бюджет токенов и суммаризация длинной истории."""
 
 from __future__ import annotations
 
@@ -20,6 +13,7 @@ APPROX_CHARS_PER_TOKEN = 4.6
 
 
 def count_tokens_approx(messages: Sequence[BaseMessage]) -> int:
+    """Грубая оценка числа токенов истории по количеству символов."""
     chars = sum(len(m.content) if isinstance(m.content, str) else 820 for m in messages)
     return max(0, int(chars / APPROX_CHARS_PER_TOKEN))
 
@@ -49,12 +43,14 @@ class RollingSummaryPipeline:
         budget_tokens: int = 4600,
         summarizer: Callable[[str, Sequence[BaseMessage]], str] | None = None,
     ):
+        """Настраивает бюджет токенов и функцию сворачивания истории."""
         self.budget = budget_tokens
         self.summarizer = summarizer  # функция (summary_so_far, messages)->str
         self.log: list[DialogTurn] = []
         self.turn_no = 0
 
     def _log_entry(self, history_tokens: int, in_: Optional[int], out: Optional[int], action: str, dropped: int) -> None:
+        """Пишет одну строку в журнал бюджета по текущему ходу."""
         self.log.append(DialogTurn(
             turn=self.turn_no,
             history_tokens_est=history_tokens,
@@ -92,6 +88,7 @@ class RollingSummaryPipeline:
         return kept, summary_new
 
     def _summarize(self, dropped: Sequence[BaseMessage]) -> str:
+        """Сворачивает выпавшие сообщения в краткую сводку."""
         if self.summarizer is None:
             # детерминированный фолбэк без модели: сливаем тексты в маркер
             texts = [m.content for m in dropped if isinstance(m.content, str)]

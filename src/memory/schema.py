@@ -56,6 +56,8 @@ SRC_LABEL = {
 
 @dataclass
 class MemoryRecord:
+    """Одна запись памяти о пользователе с горизонтом хранения и метаданными."""
+
     client_id: str
     kind: MemoryKind
     attr: str                            # ключ записи, напр. "tariff"
@@ -81,12 +83,15 @@ class MemoryRecord:
 
 
 def make_expiry(kind: MemoryKind, observed: date) -> str | None:
+    """Дата истечения для записи данного вида (None = бессрочно)."""
     days = RETENTION_DAYS.get(kind)
     return (observed + timedelta(days=days)).isoformat() if days else None
 
 
 @dataclass
 class AuditEntry:
+    """Запись журнала аудита об одной операции над памятью."""
+
     ts: str
     op: str                             # PUT_NEW / REFRESH / UPDATE / REJECT / MASK / PURGE
     client_id: str

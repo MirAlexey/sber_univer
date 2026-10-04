@@ -16,6 +16,8 @@ from src.memory.store import MemoryEngine
 
 
 class ConsolidationState(TypedDict, total=False):
+    """Состояние графа фоновой консолидации памяти."""
+
     client_id: str
     facts: list[dict]      # [{"attr","value","observed_at"}]
     merged: int
@@ -34,7 +36,10 @@ def run_consolidation(engine: MemoryEngine, client_id: str, llm: Any = None) -> 
 
 
 def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
+    """Собирает граф фоновой консолидации памяти (вне диалога)."""
+
     def node_collect(state: ConsolidationState) -> dict:
+        """Собирает факты клиента для обработки."""
         client_id = state["client_id"]
         facts = [
             {
@@ -50,6 +55,7 @@ def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
         return {"facts": facts}
 
     def node_merge(state: ConsolidationState) -> dict:
+        """Убирает дубли по паре (вид, атрибут), оставляя самую свежую запись."""
         # Простейшая дедупликация по ключу attr с сохранением самой свежей/доверенной.
         best: dict[str, dict] = {}
         for fact in state["facts"]:
@@ -65,6 +71,7 @@ def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
         return {"merged": merged, "facts": list(best.values())}
 
     def node_summarize(state: ConsolidationState) -> dict:
+        """Строит краткую сводку фактов."""
         if not state["facts"]:
             return {"summary": ""}
         bullets = "\n".join(
@@ -83,6 +90,7 @@ def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
             return {"summary": ""}
 
     def node_stats(state: ConsolidationState) -> dict:
+        """Сохраняет агрегированный профиль клиента."""
         agg = _aggregate_summary(state["client_id"], state["summary"])
         if agg:
             engine.write(
@@ -112,10 +120,12 @@ def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
 
 
 def _trust_weight(fact: dict) -> int:
+    """Числовая надежность источника."""
     from src.memory.schema import TRUST_ORDER
 
     return TRUST_ORDER.get(fact.get("source", ""), 0)
 
 
 def _aggregate_summary(client_id: str, summary: str) -> dict:
+    """Упаковывает сводку в словарь-артефакт."""
     return {"client_id": client_id, "summary": summary}

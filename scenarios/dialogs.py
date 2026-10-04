@@ -116,6 +116,7 @@ CONCLUSIONS: dict[str, tuple[dict, dict]] = {
 
 
 def _core_pairs(core: list[dict]) -> list[list[dict]]:
+    """Разбивает чередующиеся реплики на пары (пользователь, ассистент)."""
     """Разбивает чередующийся список реплик на пары (user, assistant)."""
     pairs: list[list[dict]] = []
     for msg in core:
@@ -176,4 +177,5 @@ ESSENTIALS: dict[str, list[str]] = {
 
 
 def user_turn_count(dialog: list[dict]) -> int:
+    """Считает число реплик пользователя в диалоге."""
     return sum(1 for m in dialog if m["role"] == "user")

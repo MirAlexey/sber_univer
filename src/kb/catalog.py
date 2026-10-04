@@ -1,11 +1,4 @@
-"""База знаний: документы с версиями/редакциями и их периодами действия.
-
-Предметная область взята из сценариев dialogs.jsonl — поддержка дев-облачной
-платформы: тарифы, лимиты воркеров, квоты, уведомления, автоскейлинг,
-экспорт отчётов, возврат средств. Документы имеют редакции (version) и период
-действия (valid_from..valid_to), поэтому один и тот же вопрос на разную дату
-должен давать разные корректные ответы (критерий 4 задания 2).
-"""
+"""Каталог документов базы знаний: редакции и сроки их действия."""
 
 from __future__ import annotations
 
@@ -49,10 +42,12 @@ class Catalog:
     """Все семейства документов базы знаний плюс плоский список активных текстов."""
 
     def __init__(self, docs: list[KnowledgeDoc]):
+        """Сохраняет список семейств документов."""
         self.docs = docs
         # версии индексов строятся лениво, см. src/rag/service.py
 
     def all_active_texts(self, d: date) -> list[tuple[KnowledgeDoc, Edition]]:
+        """Пары (документ, редакция), действующие на дату d."""
         out = []
         for doc in self.docs:
             ed = doc.edition_on(d)
@@ -65,6 +60,7 @@ _seed_registry: list[KnowledgeDoc] = []
 
 
 def register_seed(doc: KnowledgeDoc) -> KnowledgeDoc:
+    """Регистрирует семейство документов во встроенном каталоге."""
     _seed_registry.append(doc)
     return doc
 
@@ -83,13 +79,16 @@ class CatalogRegistry:
     """Один активный каталог, переустанавливаемый тестами (паттерн конфигурации)."""
 
     def __init__(self) -> None:
+        """Создает реестр без активного каталога."""
         self._catalog = None
 
     def set(self, catalog: Catalog) -> None:
+        """Устанавливает активный каталог (для тестов)."""
         with _LOCK:
             self._catalog = catalog
 
     def get(self) -> Catalog:
+        """Возвращает активный каталог, при необходимости создает его из семян."""
         with _LOCK:
             if self._catalog is None:
                 self._catalog = default_catalog()

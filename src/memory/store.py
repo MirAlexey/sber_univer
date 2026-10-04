@@ -47,6 +47,7 @@ class MemoryEngine:
         clock: Callable[[], date] | None = None,
         snapshot_path: str | None = None,
     ):
+        """Создает движок; при заданном snapshot_path загружает сохраненное состояние."""
         self.embedder = embedder
         self.clock = clock or (lambda: date.today())
         self.snapshot_path = snapshot_path
@@ -57,6 +58,7 @@ class MemoryEngine:
 
     # ---- персистентность между перезапусками: снимок в JSON -----------------
     def _load(self) -> None:
+        """Восстанавливает записи и аудит из JSON-снимка."""
         if not self.snapshot_path:
             return
         import json
@@ -92,9 +94,11 @@ class MemoryEngine:
     # ---- ключи и доступ ------------------------------------------------------
     @staticmethod
     def _key(client_id: str, kind: MemoryKind, attr: str) -> str:
+        """Служебный ключ записи: клиент/вид/атрибут."""
         return f"{client_id}/{kind.value}/{attr}"
 
     def records(self, client_id: str, kind: Optional[MemoryKind] = None) -> list[MemoryRecord]:
+        """Все записи клиента, при желании только заданного вида."""
         with self._lock:
             out = []
             for rec in self._records.values():
@@ -103,11 +107,13 @@ class MemoryEngine:
             return out
 
     def get(self, client_id: str, kind: MemoryKind, attr: str) -> Optional[MemoryRecord]:
+        """Одна запись по клиенту/виду/атрибуту или None."""
         with self._lock:
             rec = self._records.get(self._key(client_id, kind, attr))
             return copy.copy(rec) if rec else None
 
     def all_keys(self) -> list[str]:
+        """Все ключи записей в движке."""
         return list(self._records.keys())
 
     # ---- запись с разрешением противоречий -----------------------------------
@@ -124,6 +130,7 @@ class MemoryEngine:
         actor: str = "agent",
         reason: str = "",
     ) -> MemoryRecord:
+        """Записывает факт, разрешая противоречия по доверию источников."""
         today = self.clock()
         incoming = MemoryRecord(
             client_id=client_id,
@@ -138,6 +145,7 @@ class MemoryEngine:
             ticket_id=ticket_id,
         )
         with self._lock:
+            # Находим текущую запись и решаем: добавить, обновить или отклонить.
             existing = self._records.get(self._key(client_id, kind, attr))
             if existing is None:
                 record = incoming
@@ -169,6 +177,7 @@ class MemoryEngine:
                 why = "похожее значение, обновили счётчик"
             if record.expires_at is None:
                 record.expires_at = make_expiry(kind, today)
+        # Фиксируем операцию в журнале аудита.
         self._audit(op, record, actor=actor, reason=why or reason, extra={"source": source, "confidence": confidence})
         if self.snapshot_path:
             self.save()
@@ -184,6 +193,7 @@ class MemoryEngine:
                 if rec.client_id == client_id and (kinds is None or rec.kind in kinds)
             ]
             for rec in todel:
+                # Обязательные записи не стираем — только маскируем значение.
                 if rec.mandatory:
                     if not rec.masked:
                         rec.masked = True
@@ -194,6 +204,7 @@ class MemoryEngine:
                     del self._records[self._key(client_id, rec.kind, rec.attr)]
                     self._audit("PURGE", rec, actor=actor, reason=reason or "запрос пользователя")
                     report["purged"].append(f"{rec.kind.value}/{rec.attr}")
+        # Сохраняем снимок после изменений.
         if self.snapshot_path:
             self.save()
         return report
@@ -208,6 +219,7 @@ class MemoryEngine:
         emb = self.embedder
         q_vec = emb.embed(query) if emb else None
         scored: list[tuple[MemoryRecord, float]] = []
+        # Близость домножаем на свежесть (recency), чтобы свежее было весомее.
         for rec in pool:
             value_text = rec.value if isinstance(rec.value, str) else str(rec.value)
             label = f"{rec.kind.value} {rec.attr} {value_text}"
@@ -219,6 +231,7 @@ class MemoryEngine:
 
     # ---- аудит ---------------------------------------------------------------
     def _audit(self, op: str, rec: MemoryRecord, actor: str, reason: str = "", extra: dict | None = None) -> None:
+        """Добавляет событие в журнал аудита."""
         self.ledger.append(AuditEntry(
             ts=datetime.now().isoformat(timespec="seconds"),
             op=op,
@@ -231,10 +244,12 @@ class MemoryEngine:
         ))
 
     def audit_report(self, client_id: str) -> list[AuditEntry]:
+        """Журнал аудита по одному клиенту."""
         return [e for e in self.ledger if e.client_id == client_id]
 
 
 def _soft_equal(a: Any, b: Any) -> bool:
+    """Считает значения одинаковыми по строке без учета регистра."""
     return str(a).strip().lower() == str(b).strip().lower()
 
 
@@ -255,6 +270,7 @@ def _close_strings(a: str, b: str) -> bool:
 
 
 def _replace_value(target: MemoryRecord, incoming: MemoryRecord, mandatory_flag: bool) -> None:
+    """Переносит данные новой записи в существующую."""
     target.value = copy.deepcopy(incoming.value)
     target.source = incoming.source
     target.confidence = incoming.confidence
@@ -265,6 +281,7 @@ def _replace_value(target: MemoryRecord, incoming: MemoryRecord, mandatory_flag:
 
 
 def _cosine(a: list[float] | None, b: list[float] | None) -> float:
+    """Косинусная близость двух векторов (0..1)."""
     if a is None or b is None:
         return 0.615
     na = (sum(x * x for x in a) ** 0.5) or 1.0
@@ -289,6 +306,7 @@ def _recency(rec: MemoryRecord, today: date) -> float:
 
 
 def _record_to_dict(r: MemoryRecord) -> dict[str, Any]:
+    """Преобразует запись в JSON-совместимый словарь."""
     return {
         "client_id": r.client_id,
         "kind": r.kind.value,

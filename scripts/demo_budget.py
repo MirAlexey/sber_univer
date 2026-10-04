@@ -19,6 +19,7 @@ from src.context import RollingSummaryPipeline, count_tokens_approx  # noqa: E40
 
 
 def main(argv=None):
+    """Прогоняет длинный диалог через бюджет и показывает сжатие истории."""
     import argparse
 
     ap = argparse.ArgumentParser()
@@ -73,6 +74,7 @@ def main(argv=None):
 
 
 def _safe_window_est(pipe, msgs):
+    """Оценка токенов окна после полного прогона."""
     w, _ = pipe.run(msgs)
     return count_tokens_approx(w)
 

@@ -1,9 +1,4 @@
-"""Интерфейсы модели: чат-модель и эмбеддер.
-
-Основной путь — langchain-gigachat напрямую (как в ноутбуках занятий 6-7):
-GigaChat + GigaChatEmbeddings. Библиотека импортируется лениво, чтобы тесты
-без сети и без ключей могли работать на дублях из tests/fakes.py.
-"""
+"""Подключение к GigaChat и эмбеддеры (живые и офлайн)."""
 
 from __future__ import annotations
 
@@ -18,6 +13,7 @@ from src.models import SlotUpdate
 # ---------------------------------------------------------------------------
 
 def _gigachat_env() -> dict:
+    """Настройки подключения к GigaChat, собранные из переменных окружения."""
     """Ключи GigaChat берутся из окружения (формат langchain-gigachat)."""
     import os
     return {
@@ -59,6 +55,7 @@ class HashEmbedder:
         self.norm = norm
 
     def _featurize(self, text: str) -> list[float]:
+        """Сырой вектор признаков из слов текста."""
         vec = [0.0] * self.dim
         tokens = text.lower().split()
         tf: dict[str, int] = {}
@@ -72,6 +69,7 @@ class HashEmbedder:
         return vec
 
     def _normalize(self, v: list[float]) -> list[float]:
+        """Нормализация вектора к единичной длине."""
         if not self.norm:
             return v
         mag = sum(x * x for x in v) ** 0.5
@@ -80,16 +78,19 @@ class HashEmbedder:
         return [x / mag for x in v]
 
     def embed(self, text: str) -> list[float]:
+        """Эмбеддинг текста (офлайн-режим)."""
         return self._normalize(self._featurize(text))
 
 
 class GigaChatEmbedder:
-    """Живой эмбеддер: оборачивает GigaChatEmbeddings под единый метод embed()."""
+    """Живой эмбеддер: обёртка над GigaChatEmbeddings с единым методом embed()."""
 
     def __init__(self, raw):
+        """Запоминает обёрнутый объект GigaChatEmbeddings."""
         self._raw = raw
 
     def embed(self, text: str) -> list[float]:
+        """Эмбеддинг текста от GigaChat."""
         return [float(x) for x in self._raw.embed_query(text)]
 
 

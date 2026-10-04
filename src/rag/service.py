@@ -1,10 +1,4 @@
-"""Гибридный поиск по базе знаний: оркестрация слияния и реранкинга.
-
-Сервис строится для каталога (Catalog), принимает эмбеддер и фабрику
-реранкера, кэширует "снимки" индексов по значению параметра as_of. Поиск по
-тому же запросу на разные даты вернёт разные корректные редакции документов
-(критерий 4).
-"""
+"""Гибридный поиск: BM25 + эмбеддинги, слияние и реранк."""
 
 from __future__ import annotations
 
@@ -21,12 +15,15 @@ from src.rag.lexical import BM25Index, boost_exact_identifiers
 
 @dataclass(frozen=True)
 class Hit:
+    """Один найденный документ вместе с редакцией и оценкой."""
+
     doc: KnowledgeDoc
     edition: Edition
     score: float
     sources: tuple[str, ...]
 
     def passage_text(self, limit: int = 520) -> str:
+        """Текст пассажа со служебным номером и периодом действия."""
         text = self.edition.text
         if len(text) > limit:
             cut = text[:limit].rsplit(" ", 1)[0] + "…"
@@ -39,6 +36,7 @@ class Hit:
         )
 
     def citation_tag(self) -> str:
+        """Ссылка вида [Номер vВерсия]."""
         return f"[{self.doc.doc_num} v{self.edition.version}]"
 
 
@@ -56,6 +54,7 @@ class HybridSearch:
     """Инструмент агента: лексика + семантика + RRF + реранк по состоянию на дату."""
 
     def __init__(self, catalog: Catalog, embedder: HashEmbedder | GigaChatEmbedder, prefer_cross_encoder: bool = True):
+        """Сохраняет каталог, эмбеддер и настраивает реранкер."""
         self.catalog = catalog
         self.embedder = embedder
         self._reranker = get_reranker(prefer_cross_encoder)
@@ -63,6 +62,7 @@ class HybridSearch:
 
     # ---- подготовка снимков -------------------------------------------------
     def _snapshot(self, as_of: date) -> _Snapshot:
+        """Строит и кэширует индексы (лексика + плотные) для конкретной даты."""
         sn = self._snapshots.get(as_of)
         if sn is not None:
             return sn
@@ -84,14 +84,18 @@ class HybridSearch:
 
     @staticmethod
     def _composite(doc: KnowledgeDoc, ed: Edition) -> str:
+        """Склеивает текст документа для индексации."""
         return f"{doc.doc_num}. {doc.family_title}. {ed.title}. {ed.section}. {ed.text}"
 
     # ---- поиск --------------------------------------------------------------
     def search(self, query: str, as_of: date | str, k: int = 4) -> list[Hit]:
+        """Ищет топ-k документов на дату, склеивая лексику и семантику."""
         as_of = _to_date(as_of)
         sn = self._snapshot(as_of)
+        # Лексический и семантический каналы.
         lex_run = [i for i, _ in boost_exact_identifiers(sn.bm25.search(query, k=10), sn.nums, query)]
         dense_run = [i for i, _ in sn.dense.search(query, k=10)]
+        # Сливаем выдачи через RRF и берем топ.
         fused = reciprocal_rank_fusion([lex_run, dense_run], k=620)
         top = fused[:k]
         results: list[Hit] = []
@@ -106,16 +110,19 @@ class HybridSearch:
         return results[:k]
 
     def _final_rerank(self, hits: list[Hit], query: str) -> list[Hit]:
+        """При наличии реранкера переставляет хиты по его оценкам."""
         if not getattr(self._reranker, "available", False):
             return hits
         scores = self._reranker.rerank(query, [(h.edition.text, query) for h in hits])
         return [h for h, _ in sorted(zip(hits, scores), key=lambda pr: -pr[1])]
 
     def passages(self, query: str, as_of: date | str, k: int = 4) -> list[str]:
+        """Готовые тексты пассажей для модели."""
         return [h.passage_text() for h in self.search(query, as_of, k=k)]
 
     # ---- диагностика (для тестов и скринкаста) --------------------------------
     def describe_stage(self, query: str, as_of: date | str) -> dict:
+        """Диагностика: что нашлось на каждом этапе поиска."""
         as_of = _to_date(as_of)
         sn = self._snapshot(as_of)
         lex_run = boost_exact_identifiers(sn.bm25.search(query, k=10), sn.nums, query)
@@ -130,6 +137,7 @@ class HybridSearch:
 
 
 def _to_date(x: date | str) -> date:
+    """Приводит дату (строка ISO или date) к типу date."""
     if isinstance(x, date):
         return x
     return datetime.strptime(x, "%Y-%m-%d").date()

@@ -1,33 +1,32 @@
-"""Узлы диалогового графа задания 2.
-
-Линейный контур: extract_slots (structured output) -> manage_context (бюджет +
-суммаризация) -> build_profile (долговременная память пользователя) ->
-respond (LLM с инструментом поиска, внутренний цикл вызова инструментов,
-ссылки на источники) -> persist_user (запись новых фактов в память).
-"""
+"""Узлы диалога: слоты, бюджет, память, ответ со ссылкой на источник."""
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 
 from src.config import SETTINGS, deps
-from src.context import RollingSummaryPipeline
+from src.context import RollingSummaryPipeline, count_tokens_approx
 from src.llm import SYSTEM_GUIDE
 from src.memory.schema import MemoryKind, Source
 from src.models import slot_policies
 from src.rag.tool import search_knowledge
 
+if TYPE_CHECKING:
+    from src.graph.build import AgentState
+
 MAX_ANSWER_STEPS = 4
 
 
 def get_client_id(config: RunnableConfig) -> str:
+    """Идентификатор пользователя из конфигурации запуска."""
     return (config or {}).get("configurable", {}).get("user_id", "anonymous")
 
 
 def _last_human_content(messages) -> str:
+    """Текст последнего сообщения пользователя."""
     for m in reversed(messages):
         if m.type == "human":
             return m.content if isinstance(m.content, str) else ""
@@ -38,7 +37,8 @@ def _last_human_content(messages) -> str:
 # 1. structured output: накопление слотов
 # ---------------------------------------------------------------------------
 
-async def extract_slots(state: dict) -> dict:
+async def extract_slots(state: "AgentState") -> dict:
+    """Узнает новые слоты из последней реплики и сливает их в состояние."""
     extractor = deps.extractor
     if extractor is None:
         raise RuntimeError("extractor is not configured (проверьте bootstrap)")
@@ -63,12 +63,14 @@ async def extract_slots(state: dict) -> dict:
 # 2. бюджет контекста: фактические токены + суммаризация вытесненного
 # ---------------------------------------------------------------------------
 
-async def manage_context(state: dict) -> dict:
+async def manage_context(state: "AgentState") -> dict:
+    """Проверяет бюджет токенов и при переполнении сворачивает старую историю."""
     history = state.get("messages") or []
     pipeline: RollingSummaryPipeline | None = deps.budget
     if pipeline is None:
         pipeline = RollingSummaryPipeline(budget_tokens=SETTINGS.dialog_budget_tokens)
         deps.budget = pipeline
+    # Прогоняем историю через конвейер бюджета; он вернет ужатое окно.
     window, _ = pipeline.run(history)   # summary уже внесён маркером внутрь window
     logs = list(state.get("budget_log") or [])
     if pipeline.log:
@@ -80,20 +82,23 @@ async def manage_context(state: dict) -> dict:
 # 3. долговременная память пользователя -> блок для промпта
 # ---------------------------------------------------------------------------
 
-async def build_profile(state: dict, config: RunnableConfig) -> dict:
+async def build_profile(state: "AgentState", config: RunnableConfig) -> dict:
+    """Достает из памяти факты о пользователе для системного промпта."""
     memory = deps.memory
     if memory is None:
         return {"profile_block": ""}
     client_id = state.get("client_id") or get_client_id(config)
     recalls = memory.search(client_id, _last_human_content(state["messages"]), top_k=SETTINGS.recall_top_k)
+    # Отбираем факты, пока они укладываются в токенный бюджет памяти.
     lines = []
-    budget_left = SETTINGS.memory_budget_tokens * 4  # символы
+    spent = 0
     for rec, score in recalls:
         text = f"- {rec.kind.value}/{rec.attr} = {rec.value} (до {rec.expires_at or '∞'}, rel={score:.2f})"
-        if budget_left <= 0:
+        cost = count_tokens_approx([SystemMessage(content=text)])
+        if spent + cost > SETTINGS.memory_budget_tokens:
             break
         lines.append(text)
-        budget_left -= len(text)
+        spent += cost
     return {"profile_block": "\n".join(lines)}
 
 
@@ -101,7 +106,8 @@ async def build_profile(state: dict, config: RunnableConfig) -> dict:
 # 4. ответ со ссылкой на источник: LLM + инструмент гибридного поиска
 # ---------------------------------------------------------------------------
 
-async def respond(state: dict) -> dict:
+async def respond(state: "AgentState") -> dict:
+    """Зовет модель с инструментом поиска, исполняет вызовы инструментов и возвращает ответ."""
     llm = deps.llm
     if llm is None:
         raise RuntimeError("llm is not configured (проверьте bootstrap)")
@@ -110,6 +116,7 @@ async def respond(state: dict) -> dict:
 
     profile = state.get("profile_block") or ""
     summary = state.get("summary") or ""
+    # Собираем системный блок: правила + профиль пользователя + свёрнутая история.
     sys_blocks = [SYSTEM_GUIDE]
     if profile:
         sys_blocks.append("Долговременный профиль пользователя (используй, только если относится к делу):\n" + profile)
@@ -125,6 +132,7 @@ async def respond(state: dict) -> dict:
     assistant_msg: AIMessage | None = None
     usage: tuple[Any, Any] = (None, None)
 
+    # Цикл инструментов: пока модель предлагает вызовы, исполняем их.
     for _ in range(MAX_ANSWER_STEPS):
         response = await model_with_tools.ainvoke(chain)
         if not getattr(response, "tool_calls", None):
@@ -135,8 +143,13 @@ async def respond(state: dict) -> dict:
         for tc in response.tool_calls:
             tool_fn = {"search_knowledge": search_knowledge}.get(tc.get("name"))
             if tool_fn is None:
-                chain.append(ToolMessage(content=f"Unknown tool '{tc.get('name')}', skipped.",
-                                         tool_call_id=tc.get("id") or "", name=tc.get("name") or "unknown"))
+                chain.append(
+                    ToolMessage(
+                        content=f"Unknown tool '{tc.get('name')}', skipped.",
+                        tool_call_id=tc.get("id") or "",
+                        name=tc.get("name") or "unknown",
+                    )
+                )
                 continue
             try:
                 out = await tool_fn.ainvoke(tc.get("args") or {})
@@ -146,14 +159,20 @@ async def respond(state: dict) -> dict:
                 for tag in _tags_in(out):
                     if tag not in citations:
                         citations.append(tag)
-            chain.append(ToolMessage(content=str(out), tool_call_id=tc.get("id") or "",
-                                     name=tc.get("name") or "unknown"))
+            chain.append(
+                ToolMessage(
+                    content=str(out),
+                    tool_call_id=tc.get("id") or "",
+                    name=tc.get("name") or "unknown",
+                )
+            )
 
     if assistant_msg is None:
         assistant_msg = AIMessage(content="Step limit reached before finishing.")
 
     logs = list(state.get("budget_log") or [])
     in_tok, out_tok = usage
+    # Пишем фактические токены ответа в журнал бюджета.
     if (in_tok is not None or out_tok is not None) and logs:
         last = dict(logs[-1])
         last["actual_input_tokens"] = in_tok
@@ -168,11 +187,13 @@ async def respond(state: dict) -> dict:
 
 
 def _usage_of(response: AIMessage) -> tuple[Any, Any]:
+    """Достает фактические токены ответа из usage_metadata."""
     um = getattr(response, "usage_metadata", None) or {}
     return um.get("input_tokens"), um.get("output_tokens")
 
 
 def _tags_in(text: str) -> list[str]:
+    """Ищет в тексте ссылки вида [NN-Б vN]."""
     tags: list[str] = []
     idx = text.find("[")
     while idx >= 0:
@@ -189,7 +210,8 @@ def _tags_in(text: str) -> list[str]:
 # 5. перенос новых слотов в долговременную память + зеркало в LangGraph Store
 # ---------------------------------------------------------------------------
 
-async def persist_user(state: dict, config: RunnableConfig) -> dict:
+async def persist_user(state: "AgentState", config: RunnableConfig) -> dict:
+    """Кладет новые слоты в долговременную память и зеркалирует в Store."""
     memory = deps.memory
     store = deps.store
     client_id = state.get("client_id") or get_client_id(config)
@@ -202,6 +224,7 @@ async def persist_user(state: dict, config: RunnableConfig) -> dict:
 
 
 def _persist_to_engine(memory, client_id: str, slots: dict) -> None:
+    """Пишет профильные слоты в движок памяти."""
     mapping = {
         "project_id": (MemoryKind.PRODUCT, "projects", str),
         "tariff": (MemoryKind.FACT, "tariff", str),
@@ -225,7 +248,8 @@ def _persist_to_engine(memory, client_id: str, slots: dict) -> None:
         )
 
 
-def export_snapshot(state: dict) -> dict:
+def export_snapshot(state: "AgentState") -> dict:
+    """Артефакт запуска: слоты, ссылки, журнал бюджета."""
     """Артефакт запуска для скринкаста и README."""
     return {
         "slots": state.get("slots"),

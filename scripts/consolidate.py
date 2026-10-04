@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Фоновая пересборка памяти клиента (вне диалога)."""
+
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """Фоновая переработка памяти вне диалога (кандидат в scheduler/CI)."""
@@ -11,6 +13,7 @@ from src.memory.store import MemoryEngine
 
 
 def main():
+    """Запускает фоновую консолидацию памяти для клиента."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--client", default="client-001")
     args = parser.parse_args()

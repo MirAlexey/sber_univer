@@ -1,10 +1,4 @@
-"""Плотный (семантический) поиск на эмбеддингах.
-
-Индекс строится поверх эмбеддера с методом embed(text): в бою это
-GigaChatEmbedder (обёртка над GigaChatEmbeddings), в офлайн-тестах — HashEmbedder.
-Индекс — матрица нормализованных векторов NumPy с косинусной близостью, без
-внешней векторной БД.
-"""
+"""Поиск по эмбеддингам (плотный канал)."""
 
 from __future__ import annotations
 
@@ -14,14 +8,15 @@ from src.llm import GigaChatEmbedder, HashEmbedder
 
 
 class DenseIndex:
-    """Матрица эмбеддингов с косинусным поиском по запросу."""
 
     def __init__(self, embedder: HashEmbedder | GigaChatEmbedder):
+        """Сохраняет эмбеддер; индекс строится при вызове fit."""
         self.embedder = embedder
         self._matrix: np.ndarray | None = None
         self._dim = 0
 
     def fit(self, texts: list[str]) -> None:
+        """Векторизует тексты и складывает нормализованную матрицу."""
         vectors = [np.asarray(self.embedder.embed(t), dtype=np.float64) for t in texts]
         matrix = np.stack(vectors) if vectors else np.zeros((0, 764), dtype=np.float64)
         norms = np.linalg.norm(matrix, axis=1, keepdims=True)
@@ -31,6 +26,7 @@ class DenseIndex:
         self._dim = int(matrix.shape[1])
 
     def search(self, query: str, k: int = 10) -> list[tuple[int, float]]:
+        """Косинусный поиск: топ-k позиций с положительной близостью."""
         if self._matrix is None or self._matrix.shape[0] == 0:
             return []
         q = np.asarray(self.embedder.embed(query), dtype=np.float64)
@@ -50,4 +46,5 @@ class DenseIndex:
 
     @property
     def size(self) -> int:
+        """Число документов в индексе."""
         return 0 if self._matrix is None else int(self._matrix.shape[0])

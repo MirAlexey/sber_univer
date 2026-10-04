@@ -20,6 +20,7 @@ _KEYWORD = re.compile(r"\b(burst|email|push|SMTP|SPF|возврат|перено
 
 
 def harvest(text: str) -> list[str]:
+    """Вылавливает из текста структурные факты: проекты, тарифы, даты, числа."""
     found: list[str] = []
     found += _PROJECT.findall(text)
     found += _TARIFF.findall(text)
@@ -32,6 +33,7 @@ def harvest(text: str) -> list[str]:
 
 
 def normalize(token: str) -> str:
+    """Приводит факт к нижнему регистру без ё."""
     return token.lower().replace("ё", "е").strip()
 
 
@@ -42,10 +44,12 @@ class ParamAccumulator:
         self._uniq: set[str] = set()
 
     def absorb(self, text: str) -> None:
+        """Добавляет факты из текста в набор."""
         for tok in harvest(text):
             self._uniq.add(normalize(tok))
 
     def has(self, token: str) -> bool:
+        """Есть ли похожий факт в наборе."""
         needle = normalize(token)
         for item in self._uniq:
             if needle in item or item in needle:
@@ -53,6 +57,7 @@ class ParamAccumulator:
         return False
 
     def block(self) -> str:
+        """Сводка всех собранных фактов."""
         head = "СВОДКА КЛЮЧЕВЫХ ФАКТОВ (офлайн-суммаризатор):"
         if not self._uniq:
             return head + " (пусто)"
@@ -60,6 +65,7 @@ class ParamAccumulator:
         return head + "\n" + body
 
     def summarizer(self, prev: str, messages) -> str:
+        """Адаптер для RollingSummaryPipeline: поглощает сообщения и возвращает сводку."""
         """Интерфейс для RollingSummaryPipeline: (предыдущая сводка, выпавшие сообщения) -> текст."""
         for m in messages:
             content = m.content if isinstance(m.content, str) else ""

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Демо критерия 4: один вопрос, разные даты — разные ответы."""
+
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 """Критерий 4: один и тот же вопрос на разные даты дает разные корректные ответы."""
@@ -10,6 +12,7 @@ from src.rag.service import HybridSearch
 
 
 def main():
+    """Печатает разные ответы БЗ на один и тот же вопрос для двух дат (критерий 4)."""
     import src.kb.seeds  # noqa: F401
 
     kb = HybridSearch(catalog_registry.get(), HashEmbedder(), prefer_cross_encoder=False)

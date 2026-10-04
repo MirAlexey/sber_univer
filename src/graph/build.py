@@ -1,12 +1,4 @@
-"""Сборка диалогового графа задания 2 (LangGraph StateGraph).
-
-Contour (критерий 1):
-- состояние с накоплением слотов через structured output;
-- кратковременная память в рамках сессии — checkpointer (thread_id);
-- долговременная память между сессиями — Store (namespace user_profile/client_id)
-  и движок MemoryEngine;
-- ответ обязан ссылаться на найденный источник (System Guide + контроль ссылки).
-"""
+"""Сборка диалогового графа (LangGraph)."""
 
 from __future__ import annotations
 
@@ -37,6 +29,8 @@ STEP_LIMIT_PARENT = 962  # щедрый верхний лимит шагов г�
 
 
 class AgentState(TypedDict):
+    """Состояние диалогового графа: сообщения, слоты, память, журнал бюджета."""
+
     messages: Annotated[list[BaseMessage], add_messages]
     slots: dict
     client_id: Optional[str]
@@ -68,16 +62,8 @@ def build_graph(**overrides) -> Any:
     g.add_edge("respond", "persist_user")
     g.add_edge("persist_user", END)
 
-    graph = _compile(graph=g, checkpointer=MemorySaver(), store=deps.store)
+    graph = g.compile(checkpointer=MemorySaver(), store=deps.store)
     return graph
-
-
-def _compile(graph, checkpointer, store):
-    """Компиляция с толерантностью к разным версиям LangGraph (kw store появился позже)."""
-    try:
-        return graph.compile(checkpointer=checkpointer, store=store)
-    except TypeError:
-        return graph.compile(checkpointer=checkpointer)
 
 
 def _ensure_offline_stack(**overrides) -> None:
@@ -117,8 +103,10 @@ def bootstrap(require_llm: bool = True) -> Any:
 
 def run_config(thread_id: str, user_id: str = "anonymous", callbacks: Optional[list] = None) -> dict:
     """Конфигурация одного запуска графа: сессия (thread_id) + идентичность пользователя."""
-    cfg: dict = {"configurable": {"thread_id": thread_id, "user_id": user_id},
-                 "recursion_limit": STEP_LIMIT_PARENT}
+    cfg: dict = {
+        "configurable": {"thread_id": thread_id, "user_id": user_id},
+        "recursion_limit": STEP_LIMIT_PARENT,
+    }
     if callbacks:
         cfg["callbacks"] = callbacks
     return cfg
