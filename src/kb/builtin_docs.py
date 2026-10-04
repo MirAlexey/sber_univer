@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from src.kb.catalog import Edition, KnowledgeDoc, register_seed
+from src.kb.catalog import Edition, KnowledgeDoc, register_builtin_doc
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-start-limits",
     doc_num="06-Т",
     family_title="Тариф Start: лимит параллельных воркеров",
@@ -38,7 +38,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-pro-limits",
     doc_num="16-Т",
     family_title="Тариф Pro: лимит параллельных воркеров",
@@ -70,7 +70,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-ent-limits",
     doc_num="22-Т",
     family_title="Тариф Enterprise: ресурсы и SLA",
@@ -89,7 +89,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-quota-rules",
     doc_num="07-Т",
     family_title="Превышение квоты: причины и меры",
@@ -111,7 +111,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-autoscaling",
     doc_num="12-Р",
     family_title="Автоскейлинг: когда менять настройки",
@@ -132,7 +132,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-notifications",
     doc_num="09-Р",
     family_title="Уведомления: email и push",
@@ -165,7 +165,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-reports",
     doc_num="14-Р",
     family_title="Экспорт отчётов: расписание и SLA",
@@ -185,7 +185,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-refund",
     doc_num="03-П",
     family_title="Возврат и перенос оплаты",
@@ -219,7 +219,7 @@ register_seed(KnowledgeDoc(
 
 # ---- расширенная БЗ: сводные правила, API, инциденты, окна, безопасность, биллинг ----
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-work-table",
     doc_num="11-Т",
     family_title="Лимиты параллельных воркеров по тарифам (сводная таблица)",
@@ -239,7 +239,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-api-rates",
     doc_num="02-Т",
     family_title="Rate limits REST API по тарифам",
@@ -259,7 +259,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-incident-slo",
     doc_num="01-РЕ",
     family_title="Реагирование на инциденты и эскалация",
@@ -279,7 +279,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-maintenance-window",
     doc_num="17-О",
     family_title="Плановые окна обслуживания",
@@ -299,7 +299,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-security-roles",
     doc_num="25-Р",
     family_title="Роли доступа и безопасность",
@@ -313,7 +313,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-billing-hours",
     doc_num="05-Б",
     family_title="Оплата сверхлимитных часов",
@@ -333,7 +333,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-monitoring-alerts",
     doc_num="20-Р",
     family_title="Мониторинг и каналы алертов",
@@ -353,7 +353,7 @@ register_seed(KnowledgeDoc(
     ),
 ))
 
-register_seed(KnowledgeDoc(
+register_builtin_doc(KnowledgeDoc(
     doc_id="doc-regions",
     doc_num="04-Р",
     family_title="Регионы и часовые пояса",

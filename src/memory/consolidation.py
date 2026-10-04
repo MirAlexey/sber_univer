@@ -120,7 +120,7 @@ def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
 
 
 def _trust_weight(fact: dict) -> int:
-    """Числовая надежность источника."""
+    """Числовой вес доверия к источнику."""
     from src.memory.schema import TRUST_ORDER
 
     return TRUST_ORDER.get(fact.get("source", ""), 0)

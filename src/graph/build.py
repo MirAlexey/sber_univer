@@ -41,10 +41,10 @@ class AgentState(TypedDict):
 
 
 def build_graph(**overrides) -> Any:
-    """Собирает граф. Параметры override позволяют тестам подставить дубли.
+    """Собирает диалоговый граф; параметры override нужны тестам, чтобы подставить дубли.
 
     Если в overrides чего-то нет, берутся уже сконфигурированные объекты deps,
-    либо создаются офлайн-заменители (HashEmbedder, семена БЗ, MemoryEngine).
+    либо создаются офлайн-заменители (HashEmbedder, встроенные документы БЗ, MemoryEngine).
     """
     _ensure_offline_stack(**overrides)
 

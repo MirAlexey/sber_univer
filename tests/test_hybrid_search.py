@@ -1,7 +1,7 @@
 """Критерий 3: гибридный поиск — лексика + семантика, слияние, точные id."""
 
-import src.kb.seeds as S  # noqa: F401
-from src.kb.seeds import DEMO_QUERY_NUM, DEMO_QUERY_TARIF_LIMIT
+import src.kb.builtin_docs as S  # noqa: F401
+from src.kb.builtin_docs import DEMO_QUERY_NUM, DEMO_QUERY_TARIF_LIMIT
 
 
 def test_exact_identifier_beats_semantics(offline_env):

@@ -4,9 +4,9 @@ from datetime import date
 
 import pytest
 
-import src.kb.seeds as S  # noqa: F401,F811
+import src.kb.builtin_docs as S  # noqa: F401,F811
 from src.kb.catalog import catalog_registry
-from src.kb.seeds import AS_OF_DECEMBER, AS_OF_JUNE, DEMO_QUERY_TARIF_LIMIT
+from src.kb.builtin_docs import AS_OF_DECEMBER, AS_OF_JUNE, DEMO_QUERY_TARIF_LIMIT
 
 
 @pytest.fixture

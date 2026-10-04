@@ -56,20 +56,20 @@ class Catalog:
         return out
 
 
-_seed_registry: list[KnowledgeDoc] = []
+_builtin_docs: list[KnowledgeDoc] = []
 
 
-def register_seed(doc: KnowledgeDoc) -> KnowledgeDoc:
+def register_builtin_doc(doc: KnowledgeDoc) -> KnowledgeDoc:
     """Регистрирует семейство документов во встроенном каталоге."""
-    _seed_registry.append(doc)
+    _builtin_docs.append(doc)
     return doc
 
 
 def default_catalog() -> Catalog:
-    """Каталог из встроенных семян; потокобезопасно и идемпотентно."""
-    if not _seed_registry:
-        raise RuntimeError("seeds не загружены: импортируйте src.kb.seeds")
-    return Catalog(list(_seed_registry))
+    """Каталог из встроенных документов; потокобезопасно и идемпотентно."""
+    if not _builtin_docs:
+        raise RuntimeError("встроенные документы не загружены: импортируйте src.kb.builtin_docs")
+    return Catalog(list(_builtin_docs))
 
 
 _LOCK = threading.Lock()
@@ -88,7 +88,7 @@ class CatalogRegistry:
             self._catalog = catalog
 
     def get(self) -> Catalog:
-        """Возвращает активный каталог, при необходимости создает его из семян."""
+        """Возвращает активный каталог, при необходимости создает его из встроенных документов."""
         with _LOCK:
             if self._catalog is None:
                 self._catalog = default_catalog()

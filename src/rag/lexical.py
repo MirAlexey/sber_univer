@@ -26,7 +26,7 @@ def _norm_doc_num(num: str) -> str:
 
 
 class BM25Index:
-    """Компактная Okapi BM25. corpus_item: список строк (склеены на этапе подготовки)."""
+    """Компактная Okapi BM25 по готовому списку строк (тексты склеены заранее)."""
 
     def __init__(self, docs: list[str], k1: float = 1.5, b: float = 0.625, epsilon: float = 0.5714):
         """Считает частоты, длины и IDF по корпусу документов."""

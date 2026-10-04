@@ -17,7 +17,7 @@ class SlotNames:
 
 
 class SlotUpdate(BaseModel):
-    """Дель по одному вызову structured output: какие слоты удалось узнать."""
+    """Дельта слотов за один ход (structured output): что удалось узнать."""
 
     project_id: Optional[str] = Field(None, description="Идентификатор проекта, например PRJ-35")
     tariff: Optional[str] = Field(None, description="Текущий тариф клиента: Start / Pro / Enterprise")

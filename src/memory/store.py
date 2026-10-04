@@ -76,7 +76,7 @@ class MemoryEngine:
             self.ledger.append(AuditEntry(**ad))
 
     def save(self, path: str | None = None) -> None:
-        """Сбрасывает записи и аудит в JSON-снимок (по умолчанию — путь из конструктора)."""
+        """Выгружает записи и аудит в JSON-снимок (по умолчанию — путь из конструктора)."""
         dst = path or self.snapshot_path
         if not dst:
             return
@@ -185,7 +185,7 @@ class MemoryEngine:
 
     # ---- удаление по запросу --------------------------------------------------
     def delete(self, client_id: str, kinds: list[MemoryKind] | None = None, reason: str = "", actor: str = "user_request") -> dict[str, list[str]]:
-        """Удаляет записи клиента. Mandatory-записи не стираются, а маскируются."""
+        """Удаляет записи клиента. Обязательные записи не стираются, а маскируются."""
         report = {"purged": [], "masked": [], "kept_mandatory": []}
         with self._lock:
             todel = [

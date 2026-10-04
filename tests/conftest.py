@@ -13,8 +13,8 @@ def _clean_deps():
 
 @pytest.fixture
 def offline_env():
-    """Готовый офлайн-стек: HashEmbedder + каталог с семенами + HybridSearch + MemoryEngine."""
-    import src.kb.seeds  # noqa: F401  (регистрация семян)
+    """Готовый офлайн-стек: HashEmbedder + каталог с встроенными документами + HybridSearch + MemoryEngine."""
+    import src.kb.builtin_docs  # noqa: F401  (регистрация встроенных документов)
     from src.kb.catalog import catalog_registry
     from src.llm import HashEmbedder
     from src.memory.store import MemoryEngine

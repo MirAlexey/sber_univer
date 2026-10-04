@@ -26,7 +26,7 @@ SETTINGS = Settings()
 
 @dataclass
 class Deps:
-    """Реестр живых объектов. Пустой означание того, что всё ещё не собрано."""
+    """Реестр объектов окружения; пока пуст, зависимости ещё не собраны."""
 
     llm: object = None            # ChatGigaChat (или дубль в тестах)
     extractor: object = None      # llm.with_structured_output(SlotUpdate)

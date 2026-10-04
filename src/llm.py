@@ -24,7 +24,7 @@ def _gigachat_env() -> dict:
 
 
 def get_chat_llm(**overrides):
-    """Живой ChatGigaChat. TypeError без установленного пакета или без ключа."""
+    """Настоящая GigaChat-модель для чата; ошибка, если пакет не установлен или нет ключа."""
     try:
         from langchain_gigachat import GigaChat as ChatGigaChat
     except ImportError as exc:  # pragma: no cover
@@ -37,7 +37,7 @@ def get_chat_llm(**overrides):
 
 
 def build_extractor(llm: Any) -> object:
-    """Структурный выход для слотов (structured output)."""
+    """Возвращает LLM с фиксированной схемой слотов (structured output)."""
     return llm.with_structured_output(SlotUpdate)
 
 

@@ -36,7 +36,7 @@ SUMMARY_PROMPT = """\
 
 
 class RollingSummaryPipeline:
-    """Свёртка истории: следим за бюджетом, при переполнении — summarize + trim."""
+    """Сворачивает историю под бюджет: при переполнении — сжатие и обрезка."""
 
     def __init__(
         self,
@@ -98,7 +98,7 @@ class RollingSummaryPipeline:
 
 
 def default_summarizer(llm: Any) -> Callable[[str, Sequence[BaseMessage]], str]:
-    """Живая суммаризация GigaChat специализированным промптом."""
+    """Живая суммаризация GigaChat: свой промпт для свёртки истории."""
 
     def _do(prev: str, messages: Sequence[BaseMessage]) -> str:
         msgs = "\n".join(
