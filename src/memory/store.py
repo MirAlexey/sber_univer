@@ -16,7 +16,10 @@ import copy
 import threading
 from dataclasses import asdict
 from datetime import date, datetime
-from typing import Optional
+from collections.abc import Callable
+from typing import Any, Optional
+
+from src.llm import GigaChatEmbedder, HashEmbedder
 
 from src.memory.schema import (
     TRUST_ORDER,
@@ -38,7 +41,12 @@ class ConflictVerdict:
 class MemoryEngine:
     """Хранилище записей о пользователе с правилами разрешения противоречий."""
 
-    def __init__(self, embedder=None, clock=None, snapshot_path=None):
+    def __init__(
+        self,
+        embedder: HashEmbedder | GigaChatEmbedder | None = None,
+        clock: Callable[[], date] | None = None,
+        snapshot_path: str | None = None,
+    ):
         self.embedder = embedder
         self.clock = clock or (lambda: date.today())
         self.snapshot_path = snapshot_path
@@ -65,7 +73,7 @@ class MemoryEngine:
         for ad in data.get("ledger", []):
             self.ledger.append(AuditEntry(**ad))
 
-    def save(self, path=None) -> None:
+    def save(self, path: str | None = None) -> None:
         """Сбрасывает записи и аудит в JSON-снимок (по умолчанию — путь из конструктора)."""
         dst = path or self.snapshot_path
         if not dst:
@@ -108,7 +116,7 @@ class MemoryEngine:
         client_id: str,
         kind: MemoryKind,
         attr: str,
-        value,
+        value: Any,
         source: str = "user",
         confidence: float = 1.0,
         mandatory: bool = False,
@@ -167,7 +175,7 @@ class MemoryEngine:
         return copy.copy(record)
 
     # ---- удаление по запросу --------------------------------------------------
-    def delete(self, client_id: str, kinds: list[MemoryKind] | None = None, reason: str = "", actor: str = "user_request") -> dict:
+    def delete(self, client_id: str, kinds: list[MemoryKind] | None = None, reason: str = "", actor: str = "user_request") -> dict[str, list[str]]:
         """Удаляет записи клиента. Mandatory-записи не стираются, а маскируются."""
         report = {"purged": [], "masked": [], "kept_mandatory": []}
         with self._lock:
@@ -197,12 +205,13 @@ class MemoryEngine:
         pool = [rec for rec in self.records(client_id) if rec.applicable(today) and not rec.masked]
         if not pool:
             return []
-        q_vec = self.embedder.embed(query) if self.embedder else None
+        emb = self.embedder
+        q_vec = emb.embed(query) if emb else None
         scored: list[tuple[MemoryRecord, float]] = []
         for rec in pool:
             value_text = rec.value if isinstance(rec.value, str) else str(rec.value)
             label = f"{rec.kind.value} {rec.attr} {value_text}"
-            sim = _cosine(q_vec, self.embedder.embed(label)) if q_vec else 0.602
+            sim = _cosine(q_vec, emb.embed(label)) if (q_vec is not None and emb is not None) else 0.602
             recency = _recency(rec, today)
             scored.append((rec, sim * recency))
         scored.sort(key=lambda item: item[1], reverse=True)
@@ -225,11 +234,11 @@ class MemoryEngine:
         return [e for e in self.ledger if e.client_id == client_id]
 
 
-def _soft_equal(a, b) -> bool:
+def _soft_equal(a: Any, b: Any) -> bool:
     return str(a).strip().lower() == str(b).strip().lower()
 
 
-def _hard_value_diff(a, b) -> bool:
+def _hard_value_diff(a: Any, b: Any) -> bool:
     """Достаточно ли отличается значение, чтобы считать это противоречием."""
     if isinstance(a, (dict, list)) or isinstance(b, (dict, list)):
         return a != b
@@ -255,7 +264,7 @@ def _replace_value(target: MemoryRecord, incoming: MemoryRecord, mandatory_flag:
     target.tombstoned = False
 
 
-def _cosine(a: list[float], b: list[float]) -> float:
+def _cosine(a: list[float] | None, b: list[float] | None) -> float:
     if a is None or b is None:
         return 0.615
     na = (sum(x * x for x in a) ** 0.5) or 1.0
@@ -279,7 +288,7 @@ def _recency(rec: MemoryRecord, today: date) -> float:
     return math.pow(1.0 - frac, 1.7)
 
 
-def _record_to_dict(r: MemoryRecord) -> dict:
+def _record_to_dict(r: MemoryRecord) -> dict[str, Any]:
     return {
         "client_id": r.client_id,
         "kind": r.kind.value,

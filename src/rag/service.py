@@ -13,6 +13,7 @@ from datetime import date, datetime
 from typing import Optional
 
 from src.kb.catalog import Catalog, Edition, KnowledgeDoc
+from src.llm import GigaChatEmbedder, HashEmbedder
 from src.rag.dense import DenseIndex
 from src.rag.fusion import get_reranker, reciprocal_rank_fusion
 from src.rag.lexical import BM25Index, boost_exact_identifiers
@@ -54,7 +55,7 @@ class _Snapshot:
 class HybridSearch:
     """Инструмент агента: лексика + семантика + RRF + реранк по состоянию на дату."""
 
-    def __init__(self, catalog: Catalog, embedder, prefer_cross_encoder: bool = True):
+    def __init__(self, catalog: Catalog, embedder: HashEmbedder | GigaChatEmbedder, prefer_cross_encoder: bool = True):
         self.catalog = catalog
         self.embedder = embedder
         self._reranker = get_reranker(prefer_cross_encoder)

@@ -64,7 +64,7 @@ class CrossEncoderReranker:
         return [float(s) for s in self._ce.predict([[q, d] for q, d in pairs])]
 
 
-def get_reranker(prefer_cross_encoder: bool = True):
+def get_reranker(prefer_cross_encoder: bool = True) -> IdentityReranker | CrossEncoderReranker:
     """Фабрика реранкера: cross-encoder при возможности, иначе identity."""
     if prefer_cross_encoder:
         ce = CrossEncoderReranker()

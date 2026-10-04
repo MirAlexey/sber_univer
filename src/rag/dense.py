@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import numpy as np
 
+from src.llm import GigaChatEmbedder, HashEmbedder
 
 
 class DenseIndex:
     """Матрица эмбеддингов с косинусным поиском по запросу."""
 
-    def __init__(self, embedder):
+    def __init__(self, embedder: HashEmbedder | GigaChatEmbedder):
         self.embedder = embedder
         self._matrix: np.ndarray | None = None
         self._dim = 0

@@ -8,6 +8,7 @@ GigaChat + GigaChatEmbeddings. Библиотека импортируется �
 from __future__ import annotations
 
 import hashlib
+from typing import Any
 
 from src.models import SlotUpdate
 
@@ -39,7 +40,7 @@ def get_chat_llm(**overrides):
     return ChatGigaChat(**cfg)
 
 
-def build_extractor(llm):
+def build_extractor(llm: Any) -> object:
     """Структурный выход для слотов (structured output)."""
     return llm.with_structured_output(SlotUpdate)
 
@@ -92,7 +93,7 @@ class GigaChatEmbedder:
         return [float(x) for x in self._raw.embed_query(text)]
 
 
-def get_embeddings(force_hash: bool = False):
+def get_embeddings(force_hash: bool = False) -> HashEmbedder | GigaChatEmbedder:
     """Эмбеддер живого режима (GigaChat) или офлайн-заменитель (HashEmbedder).
 
     force_hash=True либо USE_HASH_EMBEDDER=1 возвращают офлайн-эмбеддер (тесты,

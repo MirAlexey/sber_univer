@@ -7,7 +7,7 @@ LangGraph-граф, который запускается скриптом/пл�
 
 from __future__ import annotations
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
@@ -23,7 +23,7 @@ class ConsolidationState(TypedDict, total=False):
     errors: list[str]
 
 
-def run_consolidation(engine: MemoryEngine, client_id: str, llm=None) -> dict:
+def run_consolidation(engine: MemoryEngine, client_id: str, llm: Any = None) -> dict:
     """Запуск фоновой консолидации: объединение дублей и построение сводки.
 
     llm — опциональная чат-модель для генерации краткой сводки; без неё
@@ -33,7 +33,7 @@ def run_consolidation(engine: MemoryEngine, client_id: str, llm=None) -> dict:
     return app.invoke({"client_id": client_id})
 
 
-def _build_consolidation_graph(engine: MemoryEngine, llm=None):
+def _build_consolidation_graph(engine: MemoryEngine, llm: Any = None):
     def node_collect(state: ConsolidationState) -> dict:
         client_id = state["client_id"]
         facts = [
