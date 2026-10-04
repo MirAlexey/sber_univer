@@ -59,6 +59,201 @@
       "mandatory": false,
       "ticket_id": null,
       "note": ""
+    },
+    {
+      "client_id": "client-901",
+      "kind": "product",
+      "attr": "projects",
+      "value": "PRJ-35",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-03-27",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-901",
+      "kind": "fact",
+      "attr": "tariff",
+      "value": "Start",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-10-03",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-901",
+      "kind": "product",
+      "attr": "payments",
+      "value": "2023-12",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-03-27",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-901",
+      "kind": "preference",
+      "attr": "comm_email",
+      "value": true,
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-09-23",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "value": "null",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-03-27",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "value": "null",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-10-03",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "payments",
+      "value": "2023-12",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-03-27",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-555",
+      "kind": "product",
+      "attr": "projects",
+      "value": "PRJ-35",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-03-27",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-555",
+      "kind": "fact",
+      "attr": "tariff",
+      "value": "Start",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-10-03",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-555",
+      "kind": "product",
+      "attr": "payments",
+      "value": "2023-12",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-03-27",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-555",
+      "kind": "preference",
+      "attr": "comm_email",
+      "value": true,
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-09-23",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-001",
+      "kind": "preference",
+      "attr": "comm_email",
+      "value": true,
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-09-23",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
+    },
+    {
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "city_timezone",
+      "value": "Сочи",
+      "source": "user",
+      "confidence": 0.98,
+      "observed_at": "2026-10-04",
+      "expires_at": "2028-10-03",
+      "tombstoned": false,
+      "masked": false,
+      "mandatory": false,
+      "ticket_id": null,
+      "note": ""
     }
   ],
   "ledger": [
@@ -382,6 +577,448 @@
       "attr": "tariff",
       "actor": "dialog_slot",
       "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:38",
+      "op": "PUT_NEW",
+      "client_id": "client-901",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "новая запись product/projects",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:38",
+      "op": "PUT_NEW",
+      "client_id": "client-901",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "новая запись fact/tariff",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:38",
+      "op": "PUT_NEW",
+      "client_id": "client-901",
+      "kind": "product",
+      "attr": "payments",
+      "actor": "dialog_slot",
+      "reason": "новая запись product/payments",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:41",
+      "op": "REFRESH",
+      "client_id": "client-901",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:41",
+      "op": "REFRESH",
+      "client_id": "client-901",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:41",
+      "op": "REFRESH",
+      "client_id": "client-901",
+      "kind": "product",
+      "attr": "payments",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:46:41",
+      "op": "PUT_NEW",
+      "client_id": "client-901",
+      "kind": "preference",
+      "attr": "comm_email",
+      "actor": "dialog_slot",
+      "reason": "новая запись preference/comm_email",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:49:14",
+      "op": "PUT_NEW",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "новая запись product/projects",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:49:14",
+      "op": "PUT_NEW",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "новая запись fact/tariff",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:49:14",
+      "op": "PUT_NEW",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "payments",
+      "actor": "dialog_slot",
+      "reason": "новая запись product/payments",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:18",
+      "op": "PUT_NEW",
+      "client_id": "client-555",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "новая запись product/projects",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:18",
+      "op": "PUT_NEW",
+      "client_id": "client-555",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "новая запись fact/tariff",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:18",
+      "op": "PUT_NEW",
+      "client_id": "client-555",
+      "kind": "product",
+      "attr": "payments",
+      "actor": "dialog_slot",
+      "reason": "новая запись product/payments",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:22",
+      "op": "REFRESH",
+      "client_id": "client-555",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:22",
+      "op": "REFRESH",
+      "client_id": "client-555",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:22",
+      "op": "REFRESH",
+      "client_id": "client-555",
+      "kind": "product",
+      "attr": "payments",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:55:22",
+      "op": "PUT_NEW",
+      "client_id": "client-555",
+      "kind": "preference",
+      "attr": "comm_email",
+      "actor": "dialog_slot",
+      "reason": "новая запись preference/comm_email",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:04:43",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:04:43",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:05:13",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:05:13",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:05:13",
+      "op": "PUT_NEW",
+      "client_id": "client-001",
+      "kind": "preference",
+      "attr": "comm_email",
+      "actor": "dialog_slot",
+      "reason": "новая запись preference/comm_email",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:05:37",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:05:37",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:05:37",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "preference",
+      "attr": "comm_email",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:00",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:00",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:00",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "preference",
+      "attr": "comm_email",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:35",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:35",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:35",
+      "op": "REFRESH",
+      "client_id": "client-001",
+      "kind": "preference",
+      "attr": "comm_email",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:06:35",
+      "op": "PUT_NEW",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "city_timezone",
+      "actor": "dialog_slot",
+      "reason": "новая запись fact/city_timezone",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:07:44",
+      "op": "UPDATE",
+      "client_id": "client-001",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "противоречие разрешено: пользователь обновил значение",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T21:07:44",
+      "op": "UPDATE",
+      "client_id": "client-001",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "противоречие разрешено: пользователь обновил значение",
       "extra": {
         "source": "user",
         "confidence": 0.98

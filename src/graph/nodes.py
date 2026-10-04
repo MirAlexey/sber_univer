@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -12,7 +13,7 @@ from src.config import SETTINGS, deps
 from src.context import RollingSummaryPipeline, count_tokens_approx
 from src.llm import SYSTEM_GUIDE
 from src.memory.schema import MemoryKind, Source
-from src.models import slot_policies
+from src.models import SlotNames, slot_policies
 from src.rag.tool import search_knowledge
 
 if TYPE_CHECKING:
@@ -32,6 +33,32 @@ def _last_human_content(messages) -> str:
         if m.type == "human":
             return m.content if isinstance(m.content, str) else ""
     return ""
+
+
+# Модель иногда возвращает "null"/"None" строкой вместо настоящего отсутствия.
+_NULLISH = {"null", "none", "нет", "n/a", ""}
+
+
+def _is_nullish(value) -> bool:
+    """Пустое ли значение слота (None или строка-заглушка)."""
+    if value is None:
+        return True
+    return isinstance(value, str) and value.strip().lower() in _NULLISH
+
+
+def _sanitize_payment_year(slots: dict) -> None:
+    """Отбрасывает явно ошибочный год в слоте «оплата до» (модель угадывает год)."""
+    raw = slots.get(SlotNames.PAYMENT_VALID_UNTIL)
+    if not raw or "-" not in raw:
+        return
+    try:
+        year = int(str(raw).split("-", 1)[0])
+    except ValueError:
+        slots.pop(SlotNames.PAYMENT_VALID_UNTIL, None)
+        return
+    this_year = date.today().year
+    if not (this_year <= year <= this_year + 5):
+        slots.pop(SlotNames.PAYMENT_VALID_UNTIL, None)
 
 
 # ---------------------------------------------------------------------------
@@ -62,7 +89,10 @@ async def extract_slots(state: "AgentState") -> dict:
         return {"slots": state.get("slots") or {}}
     merged = dict(state.get("slots") or {})
     for name, val in upd.model_dump(exclude_none=True).items():
+        if _is_nullish(val):
+            continue
         merged[name] = val
+    _sanitize_payment_year(merged)
     return {"slots": merged}
 
 
@@ -95,7 +125,12 @@ async def build_profile(state: "AgentState", config: RunnableConfig) -> dict:
     if memory is None:
         return {"profile_block": ""}
     client_id = state.get("client_id") or get_client_id(config)
-    recalls = memory.search(client_id, _last_human_content(state["messages"]), top_k=SETTINGS.recall_top_k)
+    try:
+        recalls = memory.search(client_id, _last_human_content(state["messages"]), top_k=SETTINGS.recall_top_k)
+    except Exception as exc:  # noqa: BLE001
+        # Эмбеддинги памяти могут временно не ответить — не роняем граф, профиль пустой.
+        print(f"[WARN] память временно недоступна ({type(exc).__name__}); профиль пуст.")
+        return {"profile_block": ""}
     # Отбираем факты, пока они укладываются в токенный бюджет памяти.
     lines = []
     spent = 0
@@ -238,6 +273,8 @@ def _persist_to_engine(memory, client_id: str, slots: dict) -> None:
     for slot_name, val in slots.items():
         if val is None or slot_name not in mapping:
             continue
+        if _is_nullish(val):
+            continue
         kind, attr, conv = mapping[slot_name]
         memory.write(
             client_id=client_id,
@@ -253,7 +290,6 @@ def _persist_to_engine(memory, client_id: str, slots: dict) -> None:
 
 def export_snapshot(state: "AgentState") -> dict:
     """Артефакт запуска: слоты, ссылки, журнал бюджета."""
-    """Артефакт запуска для скринкаста и README."""
     return {
         "slots": state.get("slots"),
         "citations": state.get("citations"),

@@ -25,3 +25,31 @@ async def test_extract_slots_graceful_on_bad_structured_output():
     }
     result = await extract_slots(state)
     assert result["slots"] == {"tariff": "Start"}
+
+
+async def test_payment_year_validated():
+    from src.models import SlotUpdate
+    from src.graph.nodes import extract_slots
+
+    class YearExtractor(FakeExtractor):
+        async def ainvoke(self, *args, **kwargs):
+            return SlotUpdate(payment_valid_until="2023-12")
+
+    deps.extractor = YearExtractor()
+    state = {"messages": [HumanMessage(content="Оплата действует до декабря")], "slots": {}}
+    result = await extract_slots(state)
+    assert "payment_valid_until" not in result["slots"]
+
+
+async def test_null_string_values_dropped():
+    from src.models import SlotUpdate
+    from src.graph.nodes import extract_slots
+
+    class NullExtractor(FakeExtractor):
+        async def ainvoke(self, *args, **kwargs):
+            return SlotUpdate(project_id="null", tariff="None")
+
+    deps.extractor = NullExtractor()
+    state = {"messages": [HumanMessage(content="Без подробностей")], "slots": {}}
+    result = await extract_slots(state)
+    assert result["slots"] == {}

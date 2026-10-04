@@ -24,6 +24,14 @@ def _pretty(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=2, default=str)
 
 
+def _is_transient(exc: Exception) -> bool:
+    """Транзиентные сбои API (лимит запросов, таймауты) — стоит повторить ход."""
+    name = type(exc).__name__
+    if "RateLimit" in name or "Timeout" in name or "Connection" in name:
+        return True
+    return any(code in str(exc) for code in ("429", "500", "502", "503", "504"))
+
+
 def main() -> None:
     from src.graph.build import bootstrap, run_config
     from src.graph.nodes import export_snapshot
@@ -34,6 +42,17 @@ def main() -> None:
         print(f"[ошибка запуска] {exc}")
         print("Впишите GIGACHAT_CREDENTIALS в .env или посмотрите офлайн-демо: make demo-temporal / demo-memory")
         sys.exit(1)
+
+    # Один event loop на всю сессию: иначе асинхронные объекты GigaChat
+    # привязываются к закрытому циклу и ломаются со 2-го хода.
+    try:
+        asyncio.run(_repl(graph, export_snapshot))
+    except KeyboardInterrupt:
+        pass
+
+
+async def _repl(graph, export_snapshot) -> None:
+    from src.graph.build import run_config
 
     config = run_config(THREAD, user_id=USER_ID)
     print("Агент задания 2 (DevCloud support). Поможет по документам БЗ со ссылкой на источник.")
@@ -48,15 +67,28 @@ def main() -> None:
         if user_input.strip().lower() in {"exit", "quit"}:
             break
 
-        try:
-            result = asyncio.run(
-                graph.ainvoke({"messages": [{"role": "user", "content": user_input}]}, config=config)
-            )
-        except KeyboardInterrupt:
-            break
-        except Exception as exc:  # noqa: BLE001
-            print(f"\n[ошибка графа] {type(exc).__name__}: {exc}")
-            print("Продолжаем диалог.\n")
+        result = None
+        attempts = 0
+        while True:
+            try:
+                result = await graph.ainvoke(
+                    {"messages": [{"role": "user", "content": user_input}]}, config=config
+                )
+                break
+            except KeyboardInterrupt:
+                break
+            except Exception as exc:  # noqa: BLE001
+                attempts += 1
+                delay = 2 ** attempts  # 2, 4, 8 секунд
+                if _is_transient(exc) and attempts <= 3:
+                    print(f"[перебор] {type(exc).__name__}; ждём {delay}с и пробуем снова…")
+                    await asyncio.sleep(delay)
+                    continue
+                print(f"\n[ошибка графа] {type(exc).__name__}: {exc}")
+                print("Продолжаем диалог.\n")
+                break
+
+        if result is None:
             continue
 
         answer = result["messages"][-1].content

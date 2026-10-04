@@ -18,7 +18,7 @@ class Settings:
     memory_budget_tokens: int = int(os.environ.get("MEMORY_BUDGET_TOKENS", "700"))
     dialog_budget_tokens: int = int(os.environ.get("DIALOG_BUDGET_TOKENS", "3200"))
     recall_top_k: int = int(os.environ.get("RECALL_TOP_K", "4"))
-    memory_file: str = os.environ.get("MEMORY_FILE", "")
+    memory_file: str = os.environ.get("MEMORY_FILE", "memory_dump.json")
 
 
 SETTINGS = Settings()

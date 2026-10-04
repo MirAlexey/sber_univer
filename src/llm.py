@@ -83,15 +83,25 @@ class HashEmbedder:
 
 
 class GigaChatEmbedder:
-    """Живой эмбеддер: обёртка над GigaChatEmbeddings с единым методом embed()."""
+    """Живой эмбеддер: обёртка над GigaChatEmbeddings с кэшем векторов."""
+
+    _CAP = 1024
 
     def __init__(self, raw):
-        """Запоминает обёрнутый объект GigaChatEmbeddings."""
+        """Запоминает обёрнутый объект GigaChatEmbeddings и пустой кэш."""
         self._raw = raw
+        self._cache = {}
 
     def embed(self, text: str) -> list[float]:
-        """Эмбеддинг текста от GigaChat."""
-        return [float(x) for x in self._raw.embed_query(text)]
+        """Эмбеддинг текста от GigaChat (повторные тексты берутся из кэша)."""
+        hit = self._cache.get(text)
+        if hit is not None:
+            return hit
+        vec = [float(x) for x in self._raw.embed_query(text)]
+        if len(self._cache) >= self._CAP:
+            self._cache.clear()
+        self._cache[text] = vec
+        return vec
 
 
 def get_embeddings(force_hash: bool = False) -> HashEmbedder | GigaChatEmbedder:
