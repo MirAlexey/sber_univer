@@ -55,7 +55,8 @@ def main() -> None:
         except KeyboardInterrupt:
             break
         except Exception as exc:  # noqa: BLE001
-            print(f"[ошибка] {exc}; продолжаем.")
+            print(f"\n[ошибка графа] {type(exc).__name__}: {exc}")
+            print("Продолжаем диалог.\n")
             continue
 
         answer = result["messages"][-1].content

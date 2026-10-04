@@ -360,6 +360,32 @@
         "source": "user",
         "confidence": 0.98
       }
+    },
+    {
+      "ts": "2026-10-04T20:27:16",
+      "op": "REFRESH",
+      "client_id": "client-777",
+      "kind": "product",
+      "attr": "projects",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
+    },
+    {
+      "ts": "2026-10-04T20:27:16",
+      "op": "REFRESH",
+      "client_id": "client-777",
+      "kind": "fact",
+      "attr": "tariff",
+      "actor": "dialog_slot",
+      "reason": "значение не изменилось, освежили",
+      "extra": {
+        "source": "user",
+        "confidence": 0.98
+      }
     }
   ]
 }

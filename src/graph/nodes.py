@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -43,16 +44,22 @@ async def extract_slots(state: "AgentState") -> dict:
     if extractor is None:
         raise RuntimeError("extractor is not configured (проверьте bootstrap)")
     last_user = _last_human_content(state["messages"])
-    upd = await extractor.ainvoke([
-        SystemMessage(
-            content=(
-                "Верни только те слоты, которые узнал из ЭТОГО сообщения пользователя; "
-                "незатронутые поля должны быть null. Известные слоты: "
-                + ", ".join(pol.name for pol in slot_policies().values())
-            )
-        ),
-        HumanMessage(content=last_user),
-    ])
+    try:
+        upd = await extractor.ainvoke([
+            SystemMessage(
+                content=(
+                    "Верни только те слоты, которые узнал из ЭТОГО сообщения пользователя; "
+                    "незатронутые поля должны быть null. Известные слоты: "
+                    + ", ".join(pol.name for pol in slot_policies().values())
+                )
+            ),
+            HumanMessage(content=last_user),
+        ])
+    except Exception as exc:  # noqa: BLE001
+        # LLM может сломать формат structured output — не роняем граф,
+        # оставляем прежние слоты и явно сообщаем об этом.
+        print(f"[WARN] слоты не распознаны ({type(exc).__name__}: {exc}); оставляем прежние.")
+        return {"slots": state.get("slots") or {}}
     merged = dict(state.get("slots") or {})
     for name, val in upd.model_dump(exclude_none=True).items():
         merged[name] = val
@@ -192,18 +199,14 @@ def _usage_of(response: AIMessage) -> tuple[Any, Any]:
     return um.get("input_tokens"), um.get("output_tokens")
 
 
+# Ссылка в выдаче имеет вид [06-Т v2, 2026-01-15..∞]; номер — две цифры
+# и буквы, включая кириллицу (Т, Р, П, О, Б, Е).
+_TAG_RE = re.compile(r"\[(\d{2}-[А-ЯЁA-Z]{1,2})\s+v(\d+)")
+
+
 def _tags_in(text: str) -> list[str]:
-    """Ищет в тексте ссылки вида [NN-Б vN]."""
-    tags: list[str] = []
-    idx = text.find("[")
-    while idx >= 0:
-        end = text.find("]", idx)
-        if end > idx:
-            tag = text[idx + 1:end]
-            if "," in tag:
-                tags.append(tag)
-        idx = text.find("[", idx + 1)
-    return tags
+    """Ищет в тексте ссылки вида [NN-Б vN] (кириллица поддерживается)."""
+    return [f"{m.group(1)} v{m.group(2)}" for m in _TAG_RE.finditer(text)]
 
 
 # ---------------------------------------------------------------------------
